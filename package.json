@@ -1,0 +1,32 @@
+{
+  "name": "homeschool-grader",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run db:generate && next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "node --env-file=.env node_modules/prisma/build/index.js generate",
+    "db:migrate": "node --env-file=.env node_modules/prisma/build/index.js migrate dev",
+    "db:seed": "node --env-file=.env prisma/seed.mjs",
+    "db:setup": "node --env-file=.env node_modules/prisma/build/index.js migrate deploy && npm run db:seed",
+    "test": "npm run build && node --env-file=.env --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "prisma": "7.10.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5.9"
+  }
+}

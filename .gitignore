@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.tsbuildinfo
+.DS_Store
+next-env.d.ts

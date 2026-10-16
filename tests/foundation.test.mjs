@@ -86,6 +86,10 @@ test("seed establishes the required families, learners, courses and approved gra
     assert.ok(submission.assignment.course.student.familyId);
   }
   assert.equal(await db.course.count({ where: { weighted: true } }), 2);
+  assert.equal(await db.course.count({ where: { curriculum: { not: null } } }), 8);
+  assert.equal((await db.course.findUniqueOrThrow({
+    where: { id: "ava-algebra" },
+  })).curriculum, "Saxon Math - Algebra 2");
 });
 
 test("seed is repeatable and preserves existing work", async () => {
@@ -93,12 +97,26 @@ test("seed is repeatable and preserves existing work", async () => {
     where: { id: "ava-english-submission" },
     data: { feedback: "Parent's revised feedback." },
   });
+  await db.course.update({
+    where: { id: "ava-english" },
+    data: { curriculum: "Parent's custom curriculum" },
+  });
+  await db.course.update({
+    where: { id: "ava-biology" },
+    data: { curriculum: null },
+  });
   run("prisma/seed.mjs");
   assert.equal(await db.course.count(), 8);
   assert.equal(await db.submission.count(), 8);
   assert.equal((await db.submission.findUniqueOrThrow({
     where: { id: "ava-english-submission" },
   })).feedback, "Parent's revised feedback.");
+  assert.equal((await db.course.findUniqueOrThrow({
+    where: { id: "ava-english" },
+  })).curriculum, "Parent's custom curriculum");
+  assert.equal((await db.course.findUniqueOrThrow({
+    where: { id: "ava-biology" },
+  })).curriculum, "Apologia Biology");
 });
 
 test("new vision submissions default to pending review with no approved grade", async () => {
@@ -143,6 +161,8 @@ test("overview and course navigation render the selected family's records", asyn
   assert.equal(courses.response.status, 200);
   assert.match(courses.html, /English II/);
   assert.match(courses.html, /Pre-Algebra/);
+  assert.match(courses.html, /<h3\b[^>]*>Algebra II<\/h3><p\b[^>]*>Saxon Math - Algebra 2<\/p>/);
+  assert.match(courses.html, /<h3\b[^>]*>U.S. History<\/h3><p\b[^>]*>Notgrass History - America the Beautiful<\/p>/);
   assert.doesNotMatch(courses.html, /American Literature/);
 });
 
@@ -151,6 +171,8 @@ test("student and second-family profiles select only their own visible courses",
   assert.match(student.html, /Student view/);
   assert.match(student.html, /English II/);
   assert.doesNotMatch(student.html, /Pre-Algebra/);
+  assert.match(student.html, /Saxon Math - Algebra 2/);
+  assert.doesNotMatch(student.html, /Notgrass History/);
   assert.doesNotMatch(student.html, /American Literature/);
 
   const rivera = await page("/courses", "parent:family-rivera");
@@ -160,13 +182,41 @@ test("student and second-family profiles select only their own visible courses",
   assert.doesNotMatch(rivera.html, /Pre-Algebra/);
 });
 
+test("profile picker has a disclosure trigger and five numbered, working profile choices", async () => {
+  const { html } = await page();
+  assert.match(html, /<details\b/);
+  assert.match(html, /<summary\b[^>]*>Switch profile/);
+  assert.doesNotMatch(html, /<select\b/);
+  const choices = [...html.matchAll(/<button\b[^>]*name="profile"[^>]*>[\s\S]*?<\/button>/g)];
+  assert.equal(choices.length, 5);
+  for (const [index, choice] of choices.entries()) {
+    assert.match(choice[0], /type="submit"/);
+    assert.match(choice[0], /value="(?:parent|student):[^"]+"/);
+    assert.match(choice[0], new RegExp(`aria-hidden="true"[^>]*>${index + 1}</span>`));
+  }
+  assert.match(choices[0][0], /aria-current="true"/);
+});
+
+test("Home, the home logo, and every rendered navigation link lead to working pages", async () => {
+  const { html } = await page("/courses");
+  const anchors = [...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>[\s\S]*?<\/a>/g)];
+  assert.ok(anchors.some(([anchor, href]) => href === "/" && /Homestead home/.test(anchor)));
+  assert.ok(anchors.some(([anchor, href]) => href === "/" && />Home<\/a>/.test(anchor)));
+  assert.ok(anchors.some(([anchor, href]) => href === "/courses" && /aria-current="page"/.test(anchor)));
+  for (const href of new Set(anchors.map(([, href]) => href).filter((href) => href.startsWith("/")))) {
+    const linked = await page(href);
+    assert.equal(linked.response.status, 200, `${href} must lead to a working page`);
+    if (href === "/") assert.match(linked.html, /Meet your learners/);
+  }
+});
+
 function decodeAttribute(value) {
   return value.replaceAll("&quot;", '"').replaceAll("&#x27;", "'")
     .replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&");
 }
 
-async function submitProfile(value) {
-  const { html } = await page();
+async function submitProfile(value, path = "/") {
+  const { html } = await page(path);
   const form = new FormData();
   for (const match of html.matchAll(/<input\b[^>]*>/g)) {
     const name = match[0].match(/\bname="([^"]+)"/)?.[1];
@@ -175,23 +225,35 @@ async function submitProfile(value) {
   }
   assert.ok([...form.keys()].length > 0, "The switcher must render a working server action.");
   form.set("profile", value);
-  return fetch(baseUrl, {
+  return fetch(`${baseUrl}${path}`, {
     method: "POST", headers: { Origin: baseUrl }, body: form, redirect: "manual",
   });
 }
 
-test("profile switch form persists selection and redirects to the selected workspace", async () => {
-  const response = await submitProfile("parent:family-rivera");
-  assert.equal(response.status, 303);
-  assert.equal(response.headers.get("location"), "/");
-  const cookie = response.headers.getSetCookie().find((value) => value.startsWith("homeschool-demo-profile="));
-  assert.ok(cookie);
-  assert.match(cookie, /HttpOnly/i);
-  assert.match(cookie, /SameSite=lax/i);
-  const selected = await fetch(`${baseUrl}/courses`, { headers: { cookie: cookie.split(";")[0] } });
-  const html = await selected.text();
-  assert.match(html, /American Literature/);
-  assert.doesNotMatch(html, /English II/);
+test("every profile button persists its selection and returns to Home from Courses", async () => {
+  for (const [value, course, excluded] of [
+    ["parent:family-parker", /Pre-Algebra/, /American Literature/],
+    ["student:student-ava", /English II/, /Pre-Algebra/],
+    ["student:student-noah", /Pre-Algebra/, /English II/],
+    ["parent:family-rivera", /American Literature/, /English II/],
+    ["student:student-elena", /American Literature/, /English II/],
+  ]) {
+    const response = await submitProfile(value, "/courses");
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get("location"), "/");
+    const cookie = response.headers.getSetCookie().find((value) => value.startsWith("homeschool-demo-profile="));
+    assert.ok(cookie);
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /SameSite=lax/i);
+    const headers = { cookie: cookie.split(";")[0] };
+    const home = await fetch(`${baseUrl}/`, { headers });
+    assert.equal(home.status, 200);
+    assert.match(await home.text(), value.startsWith("student:") ? /Your learning starts here/ : /Meet your learners/);
+    const selected = await fetch(`${baseUrl}/courses`, { headers });
+    const html = await selected.text();
+    assert.match(html, course);
+    assert.doesNotMatch(html, excluded);
+  }
 });
 
 test("malformed and nonexistent profile submissions show explicit errors without saving cookies", async () => {

@@ -44,6 +44,7 @@ model Course {
   student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   name         String
   subject      String
+  curriculum   String?
   credits      Float
   weighted     Boolean      @default(false)
   gradeLevel   Int

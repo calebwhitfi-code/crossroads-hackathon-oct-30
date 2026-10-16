@@ -30,6 +30,7 @@ export default async function CoursesPage() {
               <article key={course.id} className="flex flex-col rounded-xl border border-border bg-card p-6">
                 <p className="text-xs text-muted">{course.subject}</p>
                 <h3 className="mt-3 text-lg font-semibold">{course.name}</h3>
+                {course.curriculum && <p className="mt-1 text-xs leading-5 text-muted">{course.curriculum}</p>}
                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-lg border border-border bg-raised px-2 py-1">{course.credits} {course.credits === 1 ? "credit" : "credits"}</span>
                   {course.weighted && <span className="rounded-lg border border-border px-2 py-1 text-accent">Weighted</span>}

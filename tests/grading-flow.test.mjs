@@ -118,3 +118,49 @@ test("rubric, photo grading, validation and parent approval work end to end", as
   assert.equal(approved.earnedPoints, 1);
   assert.ok(approved.approvedAt);
 });
+
+test("transcript lists completed courses, hides from other students, and prints cleanly", async () => {
+  const course = await db.course.create({
+    data: {
+      studentId: "student-ava", name: "Transcript Test Course", subject: "Science", credits: 1, gradeLevel: 10,
+      academicYear: "2026-2027", completed: true,
+      assignments: { create: { title: "Final", maxPoints: 100, submissions: { create: { feedback: "", status: "approved", earnedPoints: 92, letterGrade: "A", approvedAt: new Date() } } } },
+    },
+  });
+  const html = async (path, cookie) => (await fetch(`${baseUrl}${path}`, { headers: cookie ? { cookie } : {} }));
+  const page = await html("/transcripts/student-ava");
+  assert.equal(page.status, 200);
+  const text = (await page.text()).replaceAll("<!-- -->", "");
+  assert.match(text, /Transcript Test Course/);
+  assert.match(text, /A \/ 92\.0%/);
+  assert.match(text, new RegExp(`/courses/${course.id}/edit`));
+
+  const own = await html("/transcripts/student-ava", "homeschool-demo-profile=student:student-ava");
+  const ownText = (await own.text()).replaceAll("<!-- -->", "");
+  assert.match(ownText, /Transcript Test Course/);
+  assert.doesNotMatch(ownText, /\/edit/);
+  for (const [path, cookie] of [["/transcripts/student-noah", "homeschool-demo-profile=student:student-ava"], ["/transcripts/student-elena", ""]]) {
+    const hidden = await (await html(path, cookie)).text();
+    assert.doesNotMatch(hidden, /Official homeschool transcript/);
+    assert.match(hidden, /NEXT_HTTP_ERROR_FALLBACK;404|not-found|could not be found|404/i);
+  }
+
+  await browser.navigate(`${baseUrl}/transcripts/student-ava`);
+  const sheet = await browser.evaluate(`document.querySelector('.transcript-sheet').innerText`);
+  assert.match(sheet, /Transcript Test Course/);
+  await browser.command("Emulation.setEmulatedMedia", { media: "print" });
+  try {
+    const layout = await browser.evaluate(`(() => ({
+      aside: getComputedStyle(document.querySelector('aside')).display,
+      button: [...document.querySelectorAll('button')].every((b) => b.offsetParent === null),
+      signature: getComputedStyle(document.querySelector('.print-only')).display,
+      sheetLeft: Math.round(document.querySelector('.transcript-sheet').getBoundingClientRect().left),
+    }))()`);
+    assert.equal(layout.aside, "none");
+    assert.equal(layout.signature, "block");
+    assert.ok(layout.sheetLeft < 40, `sheet should start at the left edge, got ${layout.sheetLeft}`);
+    assert.equal(layout.button, true);
+  } finally {
+    await browser.command("Emulation.setEmulatedMedia", { media: "" });
+  }
+});

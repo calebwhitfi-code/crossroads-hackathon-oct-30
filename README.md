@@ -1,6 +1,6 @@
 # Homestead
 
-A mobile-first homeschool grading app. Phases 1-3: local database, seeded demo families, profile switching, gradebook with GPA and credits, and photo grading with a mock provider. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
+A mobile-first homeschool grading app. Phases 1-4: local database, seeded demo families, profile switching, gradebook with GPA and credits, and photo grading with a mock provider, and printable transcripts. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
 
 ## Local setup
 
@@ -42,7 +42,7 @@ Theme tokens live in `src/app/globals.css`: page, card, raised, border, ink, mut
 
 The Prisma schema includes families, students, courses, assignments, reusable rubrics and criteria, submissions, and per-criterion scores. Each course has an optional saved curriculum label, displayed beneath its name (for example, Saxon Math or Notgrass History). Curriculum entry will be included in Phase 2 course setup, and rubric inputs arrive in Phase 3. Scores snapshot criterion descriptions and maxima so later rubric edits need not rewrite grading history. Submissions default to `pending_review`; suggested and approved grades are separate fields. Phase 1 creates no AI grades. Seeded grades represent historical parent-approved manual entries, not automated approvals.
 
-Next: Phase 4 transcripts; Phase 5 student work and feedback; Phase 6 polish. The calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
+Next: Phase 5 student work and feedback; Phase 6 polish. The calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
 
 ## Phase 3: photo grading
 
@@ -52,6 +52,13 @@ Next: Phase 4 transcripts; Phase 5 student work and feedback; Phase 6 polish. Th
 - **Review** (`/reviews`): a suggestion is saved as `pending_review` with `suggestedGrade` and per-criterion scores that snapshot each criterion's name, description, and max. Suggestions never count toward grades. Only a parent profile can approve, optionally adjusting points and feedback; approval writes the approved grade. Students cannot approve, completed courses must be reopened first, and a submission can be approved only once. Pending suggestions can be discarded.
 
 Seeded grades are unchanged. `tests/grading.test.mjs` covers the validator, mock provider, and approval rules; `tests/grading-flow.test.mjs` drives rubric creation, upload, and approval in headless Chrome.
+
+## Phase 4: transcripts
+
+- **Transcripts** (`/transcripts`, `/transcripts/<studentId>`): one printable transcript per student, grouped by school year. Only completed courses whose every assignment has an approved grade appear, each with final letter and percentage, credits earned, and a weighted flag. Year and cumulative unweighted/weighted GPA and credits reuse `src/lib/grades.ts`; the grouping lives in `src/lib/transcript.ts`. Middle-school courses are listed but excluded from GPA and credits.
+- **Visibility**: parents see every student in the active family and get per-course Edit links (to complete or reopen a course). Student profiles see only their own read-only transcript; other students' pages show not-found. Transcripts are derived, so there is nothing separate to edit or migrate.
+- **Printing**: **Print transcript** calls the browser print dialog. Print CSS hides navigation and buttons, switches to black on white, avoids splitting a year across pages, and adds a signature line.
+- Tests: `tests/transcript.test.mjs` (grouping and GPA) and a headless-Chrome check in `tests/grading-flow.test.mjs` (rendering, visibility, print media).
 
 ## Demo deployment
 

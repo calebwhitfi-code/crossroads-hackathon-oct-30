@@ -57,3 +57,42 @@ button, a, select {
     @apply inline-flex min-h-11 items-center rounded-lg text-sm font-medium text-accent hover:text-accent-hover;
   }
 }
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --color-page: #fff;
+    --color-card: #fff;
+    --color-raised: #fff;
+    --color-border: #bbb;
+    --color-ink: #000;
+    --color-muted: #444;
+    --color-accent: #000;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .transcript-sheet {
+    border: 0;
+    padding: 0;
+  }
+
+  .transcript-year, tr {
+    break-inside: avoid;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+}

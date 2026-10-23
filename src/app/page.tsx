@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { getProfileContext } from "@/lib/profile";
+import { visibleStudents } from "@/lib/gradebook";
+import { courseGrade, formatGpa, studentSummary } from "@/lib/grades";
 
 export default async function OverviewPage() {
-  const profile = await getProfileContext();
-  const students = await db.student.findMany({
-    where: { familyId: profile.family.id, ...(profile.student ? { id: profile.student.id } : {}) },
-    orderBy: { firstName: "asc" },
-    include: { courses: { select: { id: true, subject: true } } },
-  });
+  const { profile, students } = await visibleStudents();
   const courseCount = students.reduce((total, student) => total + student.courses.length, 0);
 
   return (
@@ -20,8 +15,8 @@ export default async function OverviewPage() {
         </h1>
         <p className="mt-5 max-w-xl text-sm leading-7 text-muted sm:text-base">
           {profile.student
-            ? "Your courses, all in one place. This foundation preview shows your learning space; daily work and feedback arrive in Phase 5."
-            : "One thoughtful space for your homeschool. Your family and courses are ready. A simpler way to manage grades is coming next."}
+            ? "Your courses and parent-approved grades, all in one place. Daily work and feedback arrive in Phase 5."
+            : "One thoughtful space for your homeschool. Manage your family's courses, approve grades, and follow each learner's progress."}
         </p>
       </section>
 
@@ -29,7 +24,7 @@ export default async function OverviewPage() {
         {[
           [profile.student ? "Your profile" : "Students", profile.student ? "01" : String(students.length).padStart(2, "0"), profile.student ? `Grade ${profile.student.gradeLevel}` : "Learning at their own pace"],
           ["Courses", String(courseCount).padStart(2, "0"), "Across your learning space"],
-          ["School year", "2026-27", "Seeded demo school year"],
+          ["Graded courses", String(students.flatMap((student) => student.courses).filter((course) => courseGrade(course))).padStart(2, "0"), "Across all school years"],
         ].map(([label, value, caption]) => (
           <div key={label} className="rounded-xl border border-border bg-card p-6">
             <p className="text-sm text-muted">{label}</p>
@@ -48,7 +43,9 @@ export default async function OverviewPage() {
           <Link href="/courses" className="shrink-0 rounded-lg py-2 text-sm font-medium text-accent hover:text-accent-hover">View courses <span aria-hidden="true">&rarr;</span></Link>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
-          {students.map((student) => (
+          {students.map((student) => {
+            const summary = studentSummary(student.courses);
+            return (
             <article key={student.id} className="rounded-xl border border-border bg-card p-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-raised text-sm font-semibold">{student.firstName[0]}{student.lastName[0]}</div>
@@ -58,21 +55,24 @@ export default async function OverviewPage() {
                 </div>
               </div>
               <div className="mt-6 flex items-center justify-between border-t border-border pt-4 text-sm">
-                <span className="text-muted">2026-2027 courses</span>
+                <span className="text-muted">All school years</span>
                 <span>{student.courses.length} courses</span>
               </div>
               <p className="mt-3 text-xs leading-6 text-muted">{[...new Set(student.courses.map((course) => course.subject))].join(" / ")}</p>
+              <p className="mt-3 text-xs leading-6 text-muted">Unweighted GPA <span className="text-accent">{formatGpa(summary.unweightedGpa)}</span> / Weighted GPA <span className="text-accent">{formatGpa(summary.weightedGpa)}</span></p>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 
       <section className="rounded-xl border border-border bg-card p-6 sm:p-7" aria-labelledby="foundation-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="foundation-heading" className="text-lg font-semibold">A strong foundation. A clear next step.</h2>
-          <span className="rounded-full border border-border px-3 py-1 text-xs text-accent">Phase 1</span>
+          <h2 id="foundation-heading" className="text-lg font-semibold">Less calculating. More clarity.</h2>
+          <span className="rounded-full border border-border px-3 py-1 text-xs text-accent">Phase 2</span>
         </div>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">Demo profiles, family records, and courses are connected. Next comes the gradebook, followed by photo grading and printable transcripts.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">Your gradebook connects approved grades with GPA and earned credits, by school year and cumulatively. Photo grading and printable transcripts are coming next.</p>
+        <Link href="/gradebook" className="text-link mt-3">Open gradebook <span aria-hidden="true" className="ml-2">&rarr;</span></Link>
         <p className="mt-5 border-t border-border pt-4 text-xs leading-6 text-muted">You stay in control: AI-suggested grades will always need a parent&apos;s approval before entering the gradebook.</p>
       </section>
     </div>

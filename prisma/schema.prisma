@@ -49,6 +49,8 @@ model Course {
   weighted     Boolean      @default(false)
   gradeLevel   Int
   academicYear String
+  completed    Boolean      @default(false)
+  version      Int          @default(0)
   assignments  Assignment[]
   createdAt    DateTime     @default(now())
 
@@ -63,6 +65,7 @@ model Assignment {
   description String?
   maxPoints   Float        @default(100)
   dueAt       DateTime?
+  version     Int          @default(0)
   rubricId    String?
   rubric      Rubric?      @relation(fields: [rubricId], references: [id], onDelete: SetNull)
   submissions Submission[]

@@ -22,10 +22,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <Navigation />
         <div className="mt-8 hidden space-y-4 px-4 lg:block">
           <p className="text-xs font-semibold tracking-widest text-muted uppercase">Coming next</p>
-          {["Gradebook", "Photo grading", "Transcripts"].map((label, index) => (
+          {["Photo grading", "Transcripts"].map((label, index) => (
             <div key={label} className="flex items-center justify-between gap-3 text-sm text-muted">
               <span>{label}</span>
-              <span className="rounded-md border border-border px-2 py-1 text-[10px]">Phase {index + 2}</span>
+              <span className="rounded-md border border-border px-2 py-1 text-[10px]">Phase {index + 3}</span>
             </div>
           ))}
         </div>
@@ -52,7 +52,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </main>
         <footer className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-5 py-6 text-xs text-muted sm:px-9 lg:px-12">
           <span>Made for learning. Built around your family.</span>
-          <span>Foundation demo / Phase 1</span>
+          <span>Gradebook demo / Phase 2</span>
         </footer>
       </div>
     </div>

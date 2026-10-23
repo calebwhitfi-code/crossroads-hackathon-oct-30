@@ -39,3 +39,21 @@ button, a, select {
   background: var(--color-accent);
   color: var(--color-page);
 }
+
+@layer components {
+  .form-input {
+    @apply mt-2 block min-h-11 w-full min-w-0 rounded-xl border border-border bg-raised px-3 py-2 text-sm text-ink;
+  }
+
+  .button-primary {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-page transition-colors hover:bg-accent-hover disabled:cursor-wait disabled:opacity-60;
+  }
+
+  .button-secondary {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-raised px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-card disabled:cursor-wait disabled:opacity-60;
+  }
+
+  .text-link {
+    @apply inline-flex min-h-11 items-center rounded-lg text-sm font-medium text-accent hover:text-accent-hover;
+  }
+}

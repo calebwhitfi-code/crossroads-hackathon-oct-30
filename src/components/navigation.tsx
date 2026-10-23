@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/", label: "Home", symbol: "overview" },
   { href: "/courses", label: "Courses", symbol: "courses" },
+  { href: "/gradebook", label: "Gradebook", symbol: "courses" },
 ] as const;
 
 function NavIcon({ kind }: { kind: "overview" | "courses" }) {
@@ -21,14 +22,17 @@ function NavIcon({ kind }: { kind: "overview" | "courses" }) {
 export function Navigation() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main navigation" className="flex gap-2 lg:flex-col">
-      {links.map((link) => (
+    <nav aria-label="Main navigation" className="grid grid-cols-3 gap-2 lg:flex lg:flex-col">
+      {links.map((link) => {
+        const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(`${link.href}/`))
+          || (link.href === "/courses" && pathname.startsWith("/assignments/"));
+        return (
         <Link
           key={link.href}
           href={link.href}
-          aria-current={pathname === link.href ? "page" : undefined}
-          className={`flex min-h-11 flex-1 items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
-            pathname === link.href
+          aria-current={active ? "page" : undefined}
+          className={`flex min-h-11 flex-1 flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-medium transition-colors lg:flex-row lg:gap-3 lg:px-4 lg:text-sm ${
+            active
               ? "border-border bg-raised text-accent"
               : "border-transparent text-muted hover:bg-card hover:text-ink"
           }`}
@@ -36,7 +40,8 @@ export function Navigation() {
           <NavIcon kind={link.symbol} />
           {link.label}
         </Link>
-      ))}
+        );
+      })}
     </nav>
   );
 }

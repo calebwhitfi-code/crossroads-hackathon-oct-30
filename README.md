@@ -1,6 +1,6 @@
 # Homestead
 
-A mobile-first homeschool grading app. **Phase 1 only:** local database, seeded demo families, profile switching, responsive app shell, and read-only course previews. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
+A mobile-first homeschool grading app. Phases 1-3: local database, seeded demo families, profile switching, gradebook with GPA and credits, and photo grading with a mock provider. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
 
 ## Local setup
 
@@ -34,7 +34,7 @@ npm start
 
 `npm run db:setup` applies committed migrations and seeds 2 families, 3 students, 8 courses, 8 assignments, and 8 parent-approved manual grades. Stable seed IDs make reruns idempotent without deleting existing work or overwriting saved values. Missing curriculum labels on demo courses are filled on reruns. `npm run db:migrate -- --name description` creates future schema migrations. Prisma 7 uses its official `@prisma/adapter-better-sqlite3` adapter for the local database.
 
-The SQLite database is `prisma/dev.db` and is ignored by Git. Keep `.env` private. `AI_API_KEY` is reserved for Phase 3, is never exposed through a `NEXT_PUBLIC_` variable, and is not used yet.
+The SQLite database is `prisma/dev.db` and is ignored by Git. Keep `.env` private. `AI_API_KEY` is reserved for a future real grading provider, is never exposed through a `NEXT_PUBLIC_` variable, and is not used yet.
 
 ## Scope and design
 
@@ -42,7 +42,16 @@ Theme tokens live in `src/app/globals.css`: page, card, raised, border, ink, mut
 
 The Prisma schema includes families, students, courses, assignments, reusable rubrics and criteria, submissions, and per-criterion scores. Each course has an optional saved curriculum label, displayed beneath its name (for example, Saxon Math or Notgrass History). Curriculum entry will be included in Phase 2 course setup, and rubric inputs arrive in Phase 3. Scores snapshot criterion descriptions and maxima so later rubric edits need not rewrite grading history. Submissions default to `pending_review`; suggested and approved grades are separate fields. Phase 1 creates no AI grades. Seeded grades represent historical parent-approved manual entries, not automated approvals.
 
-Next: Phase 2 gradebook CRUD, manual entry, GPA and credits; Phase 3 the single `gradeSubmission(imageBase64, rubric)` provider boundary, rubric templates, photo capture, validated JSON and parent approval; Phase 4 transcripts; Phase 5 student work and feedback; Phase 6 polish. The calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
+Next: Phase 4 transcripts; Phase 5 student work and feedback; Phase 6 polish. The calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
+
+## Phase 3: photo grading
+
+- **Rubrics** (`/rubrics`): parents create reusable rubric templates (up to 5 criteria, each with a description and max points). Rubrics belong to one family and cannot be used by another.
+- **Grade a photo** (`/assignments/<id>/grade`, linked from each assignment on a course page): choose a rubric and take or upload a JPEG, PNG, or WebP photo (5 MB max, content checked, `accept="image/*" capture`). The photo is converted to base64 on the server, graded, and discarded; it is not stored.
+- **Provider boundary** (`src/lib/grading-provider.ts`): the only entry point is `gradeSubmission(imageBase64, rubric)`. Output is validated strictly (every criterion exactly once, score within 0 and its max, total equals the sum). Only a deterministic **mock** provider exists (no network, no key, not an AI assessment). `GRADING_PROVIDER` defaults to `mock`; any other value errors until a real provider is added that reads `AI_API_KEY` server-side.
+- **Review** (`/reviews`): a suggestion is saved as `pending_review` with `suggestedGrade` and per-criterion scores that snapshot each criterion's name, description, and max. Suggestions never count toward grades. Only a parent profile can approve, optionally adjusting points and feedback; approval writes the approved grade. Students cannot approve, completed courses must be reopened first, and a submission can be approved only once. Pending suggestions can be discarded.
+
+Seeded grades are unchanged. `tests/grading.test.mjs` covers the validator, mock provider, and approval rules; `tests/grading-flow.test.mjs` drives rubric creation, upload, and approval in headless Chrome.
 
 ## Demo deployment
 

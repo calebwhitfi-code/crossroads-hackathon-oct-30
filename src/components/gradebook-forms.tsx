@@ -7,7 +7,7 @@ import type { MutationState } from "@/lib/form-validation";
 
 const initialState: MutationState = { error: null };
 
-function value(state: MutationState, key: string, fallback: string | number) {
+export function value(state: MutationState, key: string, fallback: string | number) {
   return state.values?.[key] ?? fallback;
 }
 
@@ -15,7 +15,7 @@ function check(state: MutationState, key: string, fallback: boolean) {
   return state.values ? state.values[key] === "on" : fallback;
 }
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+export function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block min-w-0 text-sm font-medium">
       <span>{label}</span>
@@ -25,11 +25,11 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
-function FormError({ state }: { state: MutationState }) {
+export function FormError({ state }: { state: MutationState }) {
   return state.error ? <p role="alert" className="rounded-xl border border-border bg-raised p-4 text-sm leading-6">{state.error}</p> : null;
 }
 
-function FormFooter({ pending, label, cancel }: { pending: boolean; label: string; cancel: string }) {
+export function FormFooter({ pending, label, cancel }: { pending: boolean; label: string; cancel: string }) {
   return (
     <div className="flex flex-wrap gap-3 border-t border-border pt-5">
       <button type="submit" disabled={pending} className="button-primary">{pending ? "Saving..." : label}</button>

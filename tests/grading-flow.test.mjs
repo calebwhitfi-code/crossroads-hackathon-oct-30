@@ -1,0 +1,120 @@
+import assert from "node:assert/strict";
+import { after, before, test } from "node:test";
+import { execFileSync, spawn } from "node:child_process";
+import { once } from "node:events";
+import { mkdtempSync, readdirSync, rmSync, rmdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+import { createPrismaClient } from "../prisma/client.mjs";
+import { startBrowser, waitFor } from "./browser.mjs";
+
+let directory;
+let db;
+let server;
+let baseUrl;
+let browser;
+let serverOutput = "";
+
+const run = (script, args = []) => execFileSync(process.execPath, [script, ...args], { env: process.env, encoding: "utf8", stdio: "pipe" });
+
+before(async () => {
+  directory = mkdtempSync(join(tmpdir(), "homestead-grading-"));
+  process.env.DATABASE_URL = `file:${join(directory, "test.db")}`;
+  run("node_modules/prisma/build/index.js", ["migrate", "deploy"]);
+  run("prisma/seed.mjs");
+  db = createPrismaClient();
+  server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "0"], {
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }, stdio: ["ignore", "pipe", "pipe"],
+  });
+  server.stdout.on("data", (chunk) => {
+    serverOutput += chunk;
+    const match = serverOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1):(\d+)/);
+    if (match) baseUrl = `http://127.0.0.1:${match[1]}`;
+  });
+  server.stderr.on("data", (chunk) => { serverOutput += chunk; });
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline && !(baseUrl && (await fetch(baseUrl).catch(() => null))?.ok)) await delay(100);
+  assert.ok(baseUrl, `Test server did not start:\n${serverOutput}`);
+  browser = await startBrowser();
+}, { timeout: 60_000 });
+
+after(async () => {
+  await browser?.close();
+  if (server && server.exitCode === null) {
+    const exited = once(server, "exit");
+    server.kill("SIGTERM");
+    await exited;
+  }
+  await db?.$disconnect();
+  if (directory) {
+    for (const name of readdirSync(directory)) rmSync(join(directory, name));
+    rmdirSync(directory);
+  }
+});
+
+const setValue = (selector, text) => browser.evaluate(`(() => {
+  const el = document.querySelector(${JSON.stringify(selector)});
+  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(text)});
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+})()`);
+const submit = async (form) => { await delay(1000); await browser.evaluate(`document.querySelector('form[data-form="${form}"]').requestSubmit()`); };
+const pathIs = (fragment) => waitFor(async () => (await browser.evaluate("location.pathname")).includes(fragment));
+
+test("rubric, photo grading, validation and parent approval work end to end", async () => {
+  await browser.navigate(`${baseUrl}/rubrics`);
+  await setValue('input[name="name"]', "Essay rubric");
+  await setValue('input[name="name0"]', "Thesis");
+  await setValue('input[name="maxPoints0"]', "10");
+  await setValue('input[name="name1"]', "Grammar");
+  await setValue('input[name="maxPoints1"]', "5");
+  await submit("rubric");
+  await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("Essay rubric"));
+  const rubric = await db.rubric.findFirst({ where: { name: "Essay rubric" }, include: { criteria: true } });
+  assert.equal(rubric.familyId, "family-parker");
+  assert.equal(rubric.criteria.length, 2);
+
+  const assignment = await db.assignment.findFirst({ where: { course: { student: { familyId: "family-parker" } } } });
+  const before = await db.submission.count({ where: { assignmentId: assignment.id } });
+  await browser.navigate(`${baseUrl}/assignments/${assignment.id}/grade`);
+  const attach = (name, type, bytes) => browser.evaluate(`(() => {
+    const input = document.querySelector('input[name="photo"]');
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([new Uint8Array(${JSON.stringify(bytes)})], ${JSON.stringify(name)}, { type: ${JSON.stringify(type)} }));
+    input.files = transfer.files;
+  })()`);
+
+  await attach("notes.png", "image/png", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  await submit("photo-grade");
+  await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("JPEG, PNG, or WebP image"));
+  assert.equal(await db.submission.count({ where: { assignmentId: assignment.id } }), before);
+
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4];
+  await attach("work.png", "image/png", png);
+  await submit("photo-grade");
+  await pathIs("/reviews/");
+  const pending = await db.submission.findFirst({
+    where: { assignmentId: assignment.id, source: "vision" }, include: { criteriaScores: true },
+  });
+  assert.equal(pending.status, "pending_review");
+  assert.equal(pending.earnedPoints, null);
+  assert.equal(pending.image, null);
+  assert.equal(pending.criteriaScores.length, 2);
+  assert.ok(pending.criteriaScores.every((score) => score.earnedPoints <= score.maxPoints && score.description));
+
+  await setValue('input[name="earnedPoints"]', String(assignment.maxPoints + 1));
+  await browser.evaluate('document.querySelector(\'input[name="approve"]\').click(); document.querySelector(\'form[data-form="approve"]\').noValidate = true');
+  await submit("approve");
+  await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("between 0 and"));
+  assert.equal((await db.submission.findUnique({ where: { id: pending.id } })).status, "pending_review");
+
+  await setValue('input[name="earnedPoints"]', "1");
+  await browser.evaluate('document.querySelector(\'form[data-form="approve"]\').noValidate = false; const box = document.querySelector(\'input[name="approve"]\'); if (!box.checked) box.click()');
+  await submit("approve");
+  await pathIs("/reviews");
+  await waitFor(async () => (await db.submission.findUnique({ where: { id: pending.id } })).status === "approved");
+  const approved = await db.submission.findUnique({ where: { id: pending.id } });
+  assert.equal(approved.earnedPoints, 1);
+  assert.ok(approved.approvedAt);
+});

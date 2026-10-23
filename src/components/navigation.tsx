@@ -7,6 +7,8 @@ const links = [
   { href: "/", label: "Home", symbol: "overview" },
   { href: "/courses", label: "Courses", symbol: "courses" },
   { href: "/gradebook", label: "Gradebook", symbol: "courses" },
+  { href: "/reviews", label: "Reviews", symbol: "overview" },
+  { href: "/rubrics", label: "Rubrics", symbol: "courses" },
 ] as const;
 
 function NavIcon({ kind }: { kind: "overview" | "courses" }) {
@@ -22,7 +24,7 @@ function NavIcon({ kind }: { kind: "overview" | "courses" }) {
 export function Navigation() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main navigation" className="grid grid-cols-3 gap-2 lg:flex lg:flex-col">
+    <nav aria-label="Main navigation" className="grid grid-cols-5 gap-2 lg:flex lg:flex-col">
       {links.map((link) => {
         const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(`${link.href}/`))
           || (link.href === "/courses" && pathname.startsWith("/assignments/"));

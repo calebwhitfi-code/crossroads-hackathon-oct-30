@@ -1,25 +1,15 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getProfileContext, PROFILE_COOKIE } from "@/lib/profile";
+import { parentFamily } from "@/lib/parent";
 import { courseInclude } from "@/lib/gradebook";
 import { courseGrade, latestApproved, letterGradeFor } from "@/lib/grades";
 import {
   academicYear, checked, dueDate, failedMutation, InputError, numberField, text,
   type MutationState,
 } from "@/lib/form-validation";
-
-async function parentFamily() {
-  const profile = await getProfileContext();
-  const saved = (await cookies()).get(PROFILE_COOKIE)?.value;
-  if (profile.role !== "parent" || (saved && saved !== profile.value)) {
-    throw new InputError("Switch to a valid parent profile to make changes.");
-  }
-  return profile.family.id;
-}
 
 function checkVersion(form: FormData, version: number) {
   if (numberField(form, "version", "Record version", 0, Number.MAX_SAFE_INTEGER, true) !== version) {

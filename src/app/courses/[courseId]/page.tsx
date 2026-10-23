@@ -55,7 +55,10 @@ export default async function CoursePage({ params, searchParams }: {
                 {submission?.feedback && <p className="mt-4 border-t border-border pt-4 text-sm leading-7 break-words whitespace-pre-wrap">{submission.feedback}</p>}
                 {editable && (
                   <div className="mt-4">
-                    <Link href={`/assignments/${assignment.id}/edit`} className="text-link" aria-label={`Edit ${assignment.title}`}>Edit assignment</Link>
+                    <div className="flex flex-wrap gap-x-5">
+                      <Link href={`/assignments/${assignment.id}/edit`} className="text-link" aria-label={`Edit ${assignment.title}`}>Edit assignment</Link>
+                      <Link href={`/assignments/${assignment.id}/grade`} className="text-link" aria-label={`Grade a photo for ${assignment.title}`}>Grade a photo</Link>
+                    </div>
                     <details className="mt-2">
                       <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-accent">{submission ? "Revise manual grade" : "Enter manual grade"}</summary>
                       <ManualGradeForm assignment={{ id: assignment.id, version: assignment.version, maxPoints: assignment.maxPoints, lastApprovedId: submission?.id ?? "", earnedPoints: submission?.earnedPoints ?? null, feedback: submission?.feedback ?? "" }} />

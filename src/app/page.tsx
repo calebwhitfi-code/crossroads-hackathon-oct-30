@@ -15,7 +15,7 @@ export default async function OverviewPage() {
         </h1>
         <p className="mt-5 max-w-xl text-sm leading-7 text-muted sm:text-base">
           {profile.student
-            ? "Your courses and parent-approved grades, all in one place. Daily work and feedback arrive in Phase 5."
+            ? "Your courses and parent-approved grades, all in one place. Daily work and feedback are coming in Phase 5."
             : "One thoughtful space for your homeschool. Manage your family's courses, approve grades, and follow each learner's progress."}
         </p>
       </section>
@@ -24,7 +24,7 @@ export default async function OverviewPage() {
         {[
           [profile.student ? "Your profile" : "Students", profile.student ? "01" : String(students.length).padStart(2, "0"), profile.student ? `Grade ${profile.student.gradeLevel}` : "Learning at their own pace"],
           ["Courses", String(courseCount).padStart(2, "0"), "Across your learning space"],
-          ["Graded courses", String(students.flatMap((student) => student.courses).filter((course) => courseGrade(course))).padStart(2, "0"), "Across all school years"],
+          ["Graded courses", String(students.flatMap((student) => student.courses).filter((course) => courseGrade(course)).length).padStart(2, "0"), "Across all school years"],
         ].map(([label, value, caption]) => (
           <div key={label} className="rounded-xl border border-border bg-card p-6">
             <p className="text-sm text-muted">{label}</p>
@@ -69,11 +69,11 @@ export default async function OverviewPage() {
       <section className="rounded-xl border border-border bg-card p-6 sm:p-7" aria-labelledby="foundation-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="foundation-heading" className="text-lg font-semibold">Less calculating. More clarity.</h2>
-          <span className="rounded-full border border-border px-3 py-1 text-xs text-accent">Phase 2</span>
+          <span className="rounded-full border border-border px-3 py-1 text-xs text-accent">Phase 4</span>
         </div>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">Your gradebook connects approved grades with GPA and earned credits, by school year and cumulatively. Photo grading and printable transcripts are coming next.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">Your gradebook connects approved grades with GPA and earned credits, by school year and cumulatively. Photo grading with parent approval and printable transcripts are built in.</p>
         <Link href="/gradebook" className="text-link mt-3">Open gradebook <span aria-hidden="true" className="ml-2">&rarr;</span></Link>
-        <p className="mt-5 border-t border-border pt-4 text-xs leading-6 text-muted">You stay in control: AI-suggested grades will always need a parent&apos;s approval before entering the gradebook.</p>
+        <p className="mt-5 border-t border-border pt-4 text-xs leading-6 text-muted">You stay in control: Suggested grades always need a parent&apos;s approval before entering the gradebook.</p>
       </section>
     </div>
   );

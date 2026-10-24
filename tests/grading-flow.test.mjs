@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { createPrismaClient } from "../prisma/client.mjs";
 import { startBrowser, waitFor } from "./browser.mjs";
+import { fixtures } from "./fixtures.mjs";
 
 let directory;
 let db;
@@ -81,16 +82,16 @@ test("rubric, photo grading, validation and parent approval work end to end", as
   const attach = (name, type, bytes) => browser.evaluate(`(() => {
     const input = document.querySelector('input[name="photo"]');
     const transfer = new DataTransfer();
-    transfer.items.add(new File([new Uint8Array(${JSON.stringify(bytes)})], ${JSON.stringify(name)}, { type: ${JSON.stringify(type)} }));
+    transfer.items.add(new File([Uint8Array.from(atob(${JSON.stringify(Buffer.from(bytes).toString("base64"))}), (c) => c.charCodeAt(0))], ${JSON.stringify(name)}, { type: ${JSON.stringify(type)} }));
     input.files = transfer.files;
   })()`);
 
-  await attach("notes.png", "image/png", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  await attach("notes.png", "image/png", fixtures.notAnImage());
   await submit("photo-grade");
   await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("JPEG, PNG, or WebP image"));
   assert.equal(await db.submission.count({ where: { assignmentId: assignment.id } }), before);
 
-  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4];
+  const png = fixtures.worksheet();
   await attach("work.png", "image/png", png);
   await submit("photo-grade");
   await pathIs("/reviews/");

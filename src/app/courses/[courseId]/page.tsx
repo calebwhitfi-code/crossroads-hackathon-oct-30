@@ -29,7 +29,7 @@ export default async function CoursePage({ params, searchParams }: {
         </div>
       </div>
       <section aria-label="Course grade" className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-card p-6">
-        <div><p className="text-sm text-muted">Current approved grade</p><p className="mt-2 text-3xl font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "Not graded"}</p></div>
+        <div><p className="text-sm text-muted">Current approved grade</p><p className="mt-2 text-3xl font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "No grades yet"}</p></div>
         <div className="text-sm leading-7 text-muted"><p>{grade?.gradedCount ?? 0} / {course.assignments.length} assignments graded</p><p>{course.completed ? "Complete" : "In progress"}{course.gradeLevel < 9 ? " / Not included in high-school GPA" : ""}</p></div>
       </section>
       {course.completed && <p className="rounded-xl border border-border p-5 text-sm leading-6 text-muted">This course is complete. A parent must reopen it before changing assignments or grades.{grade?.letter === "F" ? " A failing course earns no credits." : ""}</p>}
@@ -47,7 +47,7 @@ export default async function CoursePage({ params, searchParams }: {
                     <p className="mt-2 text-xs leading-6 text-muted">{assignment.maxPoints} possible points / {assignment.dueAt ? `Due ${assignment.dueAt.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}` : "No due date"}</p>
                   </div>
                   <div className="text-sm">
-                    <p className={submission ? "font-semibold text-accent" : "text-muted"}>{submission ? `${submission.letterGrade} / ${submission.earnedPoints} points` : "Not graded"}</p>
+                    <p className={submission ? "font-semibold text-accent" : "text-muted"}>{submission ? `${submission.letterGrade} / ${submission.earnedPoints} points` : "No grades yet"}</p>
                     {submission && <p className="mt-1 text-xs text-muted">Parent approved</p>}
                   </div>
                 </div>

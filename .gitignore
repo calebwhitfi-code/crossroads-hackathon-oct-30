@@ -10,3 +10,4 @@ out/
 *.tsbuildinfo
 .DS_Store
 next-env.d.ts
+qa-artifacts/

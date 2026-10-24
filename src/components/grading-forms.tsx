@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { approveSubmission, discardSubmission, saveRubric, submitPhotoForGrading } from "@/app/grading-actions";
 import type { MutationState } from "@/lib/form-validation";
 import { Field, FormError, FormFooter, value } from "@/components/gradebook-forms";
@@ -45,11 +45,14 @@ export function PhotoGradeForm({ assignment, rubrics }: {
   rubrics: { id: string; name: string }[];
 }) {
   const [state, action, pending] = useActionState(submitPhotoForGrading, initialState);
+  const [fileError, setFileError] = useState<string | null>(null);
   return (
-    <form action={action} data-form="photo-grade" className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-7">
+    <form action={action} data-form="photo-grade" onSubmit={(event) => { if (fileError) event.preventDefault(); }} className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-7">
       <input type="hidden" name="assignmentId" value={assignment.id} />
       <input type="hidden" name="version" value={assignment.version} />
       <FormError state={state} />
+      {fileError && <p role="alert" className="rounded-xl border border-border bg-raised p-4 text-sm leading-6">{fileError}</p>}
+      {pending && <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-accent">Grading your photo. This can take a few seconds...</p>}
       <fieldset disabled={pending} className="min-w-0 space-y-5">
         <Field label="Rubric">
           <select name="rubricId" defaultValue={value(state, "rubricId", assignment.rubricId ?? rubrics[0]?.id ?? "")} className="form-input" required>
@@ -57,7 +60,13 @@ export function PhotoGradeForm({ assignment, rubrics }: {
           </select>
         </Field>
         <Field label="Photo of the work" hint="Take a photo or choose one. JPEG, PNG, or WebP up to 5 MB. The photo is graded and not stored.">
-          <input name="photo" type="file" accept="image/*" capture="environment" className="form-input" required />
+          <input name="photo" type="file" accept="image/*" capture="environment" className="form-input" required onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file && file.size > 5 * 1024 * 1024) {
+              setFileError(`That photo is ${(file.size / 1048576).toFixed(1)} MB. Choose or retake a photo under 5 MB.`);
+              event.target.value = "";
+            } else setFileError(null);
+          }} />
         </Field>
       </fieldset>
       <button type="submit" disabled={pending} className="button-primary">{pending ? "Grading..." : "Grade photo"}</button>

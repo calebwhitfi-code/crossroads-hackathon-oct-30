@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { parentFamily } from "@/lib/parent";
 import { letterGradeFor } from "@/lib/grades";
 import { ApprovalError, checkApproval, scaleToAssignment } from "@/lib/approval";
-import { gradeSubmission, GradingValidationError } from "@/lib/grading-provider";
+import { gradeSubmission, GradingError, GradingValidationError } from "@/lib/grading-provider";
 import {
   checked, failedMutation, InputError, numberField, text, type MutationState,
 } from "@/lib/form-validation";
@@ -90,10 +90,12 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
     const rubricMax = rubric.criteria.reduce((sum, criterion) => sum + criterion.maxPoints, 0);
     const suggested = scaleToAssignment(result.total, rubricMax, assignment.maxPoints);
     const created = await db.$transaction(async (tx) => {
-      const current = await tx.assignment.findUnique({ where: { id: assignmentId }, include: { course: true } });
-      if (!current || current.course.completed || current.version !== assignment.version) {
-        throw new InputError("This assignment changed. Refresh before grading.");
-      }
+      // Compare-and-swap on the version also stops a double-submit from saving two suggestions.
+      const claimed = await tx.assignment.updateMany({
+        where: { id: assignmentId, version: assignment.version, course: { completed: false } },
+        data: { rubricId: rubric.id, version: { increment: 1 } },
+      });
+      if (claimed.count !== 1) throw new InputError("This assignment changed or was already submitted. Refresh before grading.");
       const submission = await tx.submission.create({
         data: {
           assignmentId, source: "vision", status: "pending_review", feedback: result.feedback,
@@ -109,12 +111,15 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
           },
         },
       });
-      await tx.assignment.update({ where: { id: assignmentId }, data: { rubricId: rubric.id } });
       return submission;
     });
     submissionId = created.id;
   } catch (error) {
-    if (error instanceof GradingValidationError || error instanceof ApprovalError) {
+    if (error instanceof GradingValidationError && error.message.startsWith("Invalid grading result")) {
+      console.error("Photo grading returned an invalid result:", error.message);
+      return failedMutation(new InputError("The grader returned an unusable result. Please try again. Nothing was saved."), form, "Photo grading");
+    }
+    if (error instanceof GradingError || error instanceof ApprovalError) {
       return failedMutation(new InputError(error.message), form, "Photo grading");
     }
     return failedMutation(error, form, "Photo grading");

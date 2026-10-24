@@ -20,6 +20,7 @@ export async function startBrowser() {
   let socket;
   const pending = new Map();
   let nextId = 0;
+  const events = [];
 
   async function close() {
     socket?.close();
@@ -45,6 +46,7 @@ export async function startBrowser() {
     socket = new WebSocket(page.webSocketDebuggerUrl);
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(event.data);
+      if (message.method) events.push(message);
       const request = pending.get(message.id);
       if (!request) return;
       pending.delete(message.id);
@@ -77,7 +79,7 @@ export async function startBrowser() {
       await waitFor(() => evaluate(`location.href === ${JSON.stringify(url)} && document.readyState === "complete"`));
     }
 
-    return { command, evaluate, navigate, close };
+    return { command, evaluate, navigate, close, events };
   } catch (error) {
     await close();
     throw error;

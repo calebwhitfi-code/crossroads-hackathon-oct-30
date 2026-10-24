@@ -17,7 +17,7 @@ export function text(form: FormData, key: string, label: string, max: number, re
 export function numberField(form: FormData, key: string, label: string, min: number, max: number, integer = false) {
   const raw = text(form, key, label, 30);
   if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
-    throw new InputError(`${label} must be a number with at most two decimal places.`);
+    throw new InputError(`${label} must be a number with at most two decimal places and no negative sign or letters.`);
   }
   const value = Number(raw);
   if (!Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) {

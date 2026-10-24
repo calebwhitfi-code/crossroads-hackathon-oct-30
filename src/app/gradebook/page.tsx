@@ -34,7 +34,7 @@ export default async function GradebookPage() {
                       return (
                         <div key={course.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
                           <div className="min-w-0"><Link href={`/courses/${course.id}`} className="text-link break-words">{course.name}</Link>{course.curriculum && <p className="text-xs leading-5 break-words text-muted">{course.curriculum}</p>}<p className="mt-1 text-xs leading-5 text-muted">{formatCredits(course.credits)} credits / {course.completed ? "Complete" : "In progress"}{course.weighted ? " / Weighted" : ""}{course.gradeLevel < 9 ? " / Middle school" : ""}</p></div>
-                          <p className="text-sm font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "Not graded"}</p>
+                          <p className="text-sm font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "No grades yet"}</p>
                         </div>
                       );
                     })}
@@ -49,7 +49,7 @@ export default async function GradebookPage() {
       <aside className="rounded-xl border border-border p-5 text-xs leading-7 text-muted">
         <h2 className="font-semibold text-ink">How these numbers work</h2>
         <p>A: 90-100% / B: 80-89.99% / C: 70-79.99% / D: 60-69.99% / F: below 60%. GPA points: 4 / 3 / 2 / 1 / 0. Passing weighted courses add 1 point. GPA is weighted by course credits and uses grades 9-12 only.</p>
-        <p>Course percentages use total earned points divided by total possible points on graded assignments. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA.</p>
+        <p>Course percentages use total earned points divided by total possible points on graded assignments. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA. A failed course (below 60%) earns 0 credits but still counts in GPA at 0.0 points.</p>
       </aside>
     </div>
   );

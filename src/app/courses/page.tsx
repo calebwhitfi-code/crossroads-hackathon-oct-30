@@ -36,7 +36,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
                   <span className="rounded-lg border border-border bg-raised px-2 py-1">{formatCredits(course.credits)} {course.credits === 1 ? "credit" : "credits"}</span>
                   {course.weighted && <span className="rounded-lg border border-border px-2 py-1 text-accent">Weighted</span>}
                 </div>
-                <p className="mt-4 text-sm font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "Not graded"}</p>
+                <p className="mt-4 text-sm font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "No grades yet"}</p>
                 <p className="mt-2 text-xs leading-6 text-muted">{course.assignments.length} assignments / {course.academicYear} / {course.completed ? "Complete" : "In progress"}</p>
                 <div className="mt-auto flex flex-wrap gap-4 border-t border-border pt-3">
                   <Link href={`/courses/${course.id}`} className="text-link" aria-label={`Open ${course.name}`}>Open course</Link>

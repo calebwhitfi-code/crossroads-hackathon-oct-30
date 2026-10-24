@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { fixtures } from "./fixtures.mjs";
 import { gradeSubmission, mockGrade, validateGradingResult } from "../src/lib/grading-provider.ts";
 import { ApprovalError, checkApproval, scaleToAssignment } from "../src/lib/approval.ts";
 
@@ -11,6 +12,7 @@ const rubric = {
   ],
 };
 const good = () => ({
+  imageQuality: "ok",
   criteria: [{ criterionId: "c1", score: 8, feedback: "ok" }, { criterionId: "c2", score: 4.5, feedback: "ok" }],
   feedback: "Nice", total: 12.5,
 });
@@ -38,13 +40,14 @@ test("validator rejects malformed, out-of-range, duplicate, unknown and mis-summ
 });
 
 test("mock provider is deterministic, bounded and passes validation", async () => {
-  const first = await gradeSubmission("aGVsbG8=", rubric);
-  const second = await gradeSubmission("aGVsbG8=", rubric);
+  const image = Buffer.from(fixtures.worksheet()).toString("base64");
+  const first = await gradeSubmission(image, rubric);
+  const second = await gradeSubmission(image, rubric);
   assert.deepEqual(first, second);
   for (const [index, score] of first.criteria.entries()) {
     assert.ok(score.score >= 0 && score.score <= rubric.criteria[index].maxPoints);
   }
-  assert.doesNotThrow(() => validateGradingResult(mockGrade("other", rubric), rubric));
+  assert.doesNotThrow(() => validateGradingResult(mockGrade(image + "x", rubric), rubric));
 });
 
 test("provider boundary rejects empty images, empty rubrics and unknown providers", async () => {

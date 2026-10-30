@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ManualGradeForm } from "@/components/gradebook-forms";
 import { SaveNotice } from "@/components/save-notice";
 import { visibleCourse } from "@/lib/gradebook";
-import { courseGrade, formatCredits, formatPercentage, latestApproved } from "@/lib/grades";
+import { CATEGORY_LABELS, courseGrade, formatCredits, formatPercentage, latestApproved } from "@/lib/grades";
 
 export const metadata = { title: "Course gradebook" };
 
@@ -44,7 +44,7 @@ export default async function CoursePage({ params, searchParams }: {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h3 className="break-words text-lg font-semibold">{assignment.title}</h3>
-                    <p className="mt-2 text-xs leading-6 text-muted">{assignment.maxPoints} possible points / {assignment.dueAt ? `Due ${assignment.dueAt.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}` : "No due date"}</p>
+                    <p className="mt-2 text-xs leading-6 text-muted">{CATEGORY_LABELS[assignment.category]} / {assignment.maxPoints} possible points / {assignment.dueAt ? `Due ${assignment.dueAt.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}` : "No due date"}</p>
                   </div>
                   <div className="text-sm">
                     <p className={submission ? "font-semibold text-accent" : "text-muted"}>{submission ? `${submission.letterGrade} / ${submission.earnedPoints} points` : "No grades yet"}</p>

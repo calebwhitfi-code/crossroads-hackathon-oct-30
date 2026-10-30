@@ -11,6 +11,12 @@ enum SubmissionStatus {
   approved
 }
 
+enum AssignmentCategory {
+  test
+  quiz
+  homework
+}
+
 enum SubmissionSource {
   manual
   vision
@@ -64,6 +70,7 @@ model Assignment {
   title       String
   description String?
   maxPoints   Float        @default(100)
+  category    AssignmentCategory @default(homework)
   dueAt       DateTime?
   version     Int          @default(0)
   rubricId    String?

@@ -59,13 +59,18 @@ export function PhotoGradeForm({ assignment, rubrics }: {
             {rubrics.map((rubric) => <option key={rubric.id} value={rubric.id}>{rubric.name}</option>)}
           </select>
         </Field>
-        <Field label="Photo of the work" hint="Take a photo or choose one. JPEG, PNG, or WebP up to 5 MB. The photo is graded and not stored.">
+        <Field label="Photo of the work" hint="Take a photo or choose one and grading starts right away. JPEG, PNG, or WebP up to 5 MB. The photo is graded and not stored.">
           <input name="photo" type="file" accept="image/*" capture="environment" className="form-input" required onChange={(event) => {
-            const file = event.target.files?.[0];
+            const input = event.target;
+            const file = input.files?.[0];
             if (file && file.size > 5 * 1024 * 1024) {
               setFileError(`That photo is ${(file.size / 1048576).toFixed(1)} MB. Choose or retake a photo under 5 MB.`);
-              event.target.value = "";
-            } else setFileError(null);
+              input.value = "";
+            } else {
+              setFileError(null);
+              // Choosing or taking a photo starts grading right away.
+              if (file) input.form?.requestSubmit();
+            }
           }} />
         </Field>
       </fieldset>
@@ -90,12 +95,9 @@ export function ApproveForm({ submission }: {
         <Field label="Feedback">
           <textarea name="feedback" defaultValue={value(state, "feedback", submission.feedback)} rows={4} maxLength={5000} className="form-input" />
         </Field>
-        <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-6">
-          <input name="approve" type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-accent" />
-          <span>I have reviewed these points and approve this grade as the parent.</span>
-        </label>
       </fieldset>
-      <button type="submit" disabled={pending} className="button-primary">{pending ? "Saving..." : "Approve & save grade"}</button>
+      <button type="submit" name="approve" value="on" disabled={pending} className="button-primary">{pending ? "Saving..." : "Approve & save grade"}</button>
+      <p className="text-xs leading-5 text-muted">Approving as the parent saves these points to the gradebook. Change the points first to override the suggestion.</p>
     </form>
   );
 }

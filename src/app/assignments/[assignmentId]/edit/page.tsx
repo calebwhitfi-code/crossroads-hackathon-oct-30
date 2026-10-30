@@ -16,7 +16,7 @@ export default async function EditAssignmentPage({ params }: { params: Promise<{
   return (
     <div className="max-w-3xl space-y-6">
       <div><Link href={`/courses/${course.id}`} className="text-link">Back to course</Link><h1 className="mt-3 text-3xl font-semibold">Edit assignment.</h1><p className="mt-3 text-sm text-muted">{course.name}</p></div>
-      <AssignmentForm initial={{ id: assignment.id, courseId: course.id, version: assignment.version, title: assignment.title, description: assignment.description, maxPoints: assignment.maxPoints, dueAt: assignment.dueAt?.toISOString().slice(0, 10) ?? "" }} />
+      <AssignmentForm initial={{ id: assignment.id, courseId: course.id, version: assignment.version, title: assignment.title, description: assignment.description, maxPoints: assignment.maxPoints, category: assignment.category, dueAt: assignment.dueAt?.toISOString().slice(0, 10) ?? "" }} />
       <DeleteForm kind="assignment" id={assignment.id} version={assignment.version} />
     </div>
   );

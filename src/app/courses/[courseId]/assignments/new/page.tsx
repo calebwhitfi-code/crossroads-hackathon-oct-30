@@ -12,7 +12,7 @@ export default async function NewAssignmentPage({ params }: { params: Promise<{ 
   return (
     <div className="max-w-3xl space-y-6">
       <div><Link href={`/courses/${course.id}`} className="text-link">Back to course</Link><h1 className="mt-3 text-3xl font-semibold">Add an assignment.</h1><p className="mt-3 text-sm text-muted">{course.name} / {course.academicYear}</p></div>
-      <AssignmentForm initial={{ id: "", courseId: course.id, version: 0, title: "", description: "", maxPoints: 100, dueAt: "" }} />
+      <AssignmentForm initial={{ id: "", courseId: course.id, version: 0, title: "", description: "", maxPoints: 100, category: "homework", dueAt: "" }} />
     </div>
   );
 }

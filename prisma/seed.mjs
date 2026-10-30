@@ -67,7 +67,7 @@ async function seed() {
           await db.assignment.upsert({
             where: { id: `${id}-assignment` }, update: {},
             create: {
-              id: `${id}-assignment`, courseId: id, title, maxPoints: 100,
+              id: `${id}-assignment`, courseId: id, title, maxPoints: 100, category: "homework",
               description: "Completed demo assignment with a parent-approved manual grade.",
               dueAt: new Date("2026-10-12T16:00:00Z"),
             },

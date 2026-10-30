@@ -29,14 +29,21 @@ test("STEP1 spec data: letters, credits and GPA match exactly", async () => {
   assert.equal(summary.weightedGpa, 2.875);
 });
 
-test("STEP1 spec data: app uses total-points math, not the category weights (reported for decision)", async () => {
+test("STEP1 spec data: weighted category percentages match the spec exactly", async () => {
   const courses = await specCourses();
-  const percent = Object.fromEntries(courses.map((course) => [course.name, courseGrade(course).percentage]));
-  const spec = { "Algebra I": 93.5, "English 9": 85.5, Biology: 77.6, Bible: 100, PE: 61.1 };
-  const differing = Object.keys(spec).filter((name) => Math.abs(percent[name] - spec[name]) > 0.05);
-  // Documented mismatch: the app has no assignment categories, so percentages differ while letters and GPA agree.
-  assert.deepEqual(differing, ["Algebra I", "English 9", "Biology", "PE"]);
-  assert.equal(percent["Algebra I"], 93);
+  const percent = Object.fromEntries(courses.map((course) => [course.name, formatPercentage(courseGrade(course).percentage)]));
+  assert.deepEqual(percent, { "Algebra I": "93.5%", "English 9": "85.5%", Biology: "77.6%", Bible: "100.0%", PE: "61.1%" });
+});
+
+test("STEP1 weights renormalize over categories that have grades; entries average within a category", () => {
+  const sub = (earned) => [{ id: String(earned), status: "approved", earnedPoints: earned, approvedAt: new Date(), createdAt: new Date() }];
+  const only = (assignments) => Math.round(courseGrade({ assignments }).percentage * 1e6) / 1e6;
+  const r6 = (n) => Math.round(n * 1e6) / 1e6;
+  assert.equal(only([{ maxPoints: 100, category: "test", submissions: sub(80) }]), 80);
+  assert.equal(only([{ maxPoints: 100, category: "test", submissions: sub(100) }, { maxPoints: 100, category: "quiz", submissions: sub(50) }]), r6((100 * 50 + 50 * 20) / 70));
+  assert.equal(only([{ maxPoints: 100, category: "test", submissions: sub(90) }, { maxPoints: 100, category: "test", submissions: sub(96) }, { maxPoints: 100, category: "homework", submissions: sub(98) }]), r6((93 * 50 + 98 * 30) / 80));
+  assert.equal(only([{ maxPoints: 10, category: "quiz", submissions: sub(5) }, { maxPoints: 100, category: "quiz", submissions: sub(100) }]), 75);
+  assert.equal(only([{ maxPoints: 100, submissions: sub(70) }]), 70);
 });
 
 test("STEP1 same numbers appear on dashboard, gradebook and transcript", async () => {
@@ -44,17 +51,17 @@ test("STEP1 same numbers appear on dashboard, gradebook and transcript", async (
     const { status, text } = await app.get(path, parent);
     const page = plain(text);
     assert.equal(status, 200, path);
-    assert.match(page, /2\.88/, `${path} GPA`);
+    assert.match(page, /2\.875/, `${path} GPA`);
     assert.doesNotMatch(page, /NaN|undefined|\[object/, `${path} has broken values`);
   }
   const gradebook = plain((await app.get("/gradebook", parent)).text);
   assert.match(gradebook, /Earned credits 4 /);
-  assert.match(gradebook, /Algebra I.*A \/ 93\.0%/);
-  assert.match(gradebook, /Biology.*C \/ 76\.6%/);
+  assert.match(gradebook, /Algebra I.*A \/ 93\.5%/);
+  assert.match(gradebook, /Biology.*C \/ 77\.6%/);
   const transcript = plain((await app.get("/transcripts/qa-student", parent)).text);
   assert.match(transcript, /Credits earned 4 /);
   assert.match(transcript, /Completed courses 5/);
-  assert.match(transcript, /PE.*D \/ 61\.0% 0\.5 of 0\.5/);
+  assert.match(transcript, /PE.*D \/ 61\.1% 0\.5 of 0\.5/);
   assert.match(plain((await app.get("/", parent)).text), /Graded courses 05 /);
 });
 

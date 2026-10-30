@@ -8,8 +8,18 @@ type SubmissionForGrade = {
   createdAt: Date;
 };
 
+export const CATEGORY_WEIGHTS = { test: 50, quiz: 20, homework: 30 } as const;
+export type AssignmentCategory = keyof typeof CATEGORY_WEIGHTS;
+export const CATEGORY_LABELS: Record<AssignmentCategory, string> = { test: "Test", quiz: "Quiz", homework: "Homework" };
+export const CATEGORIES = Object.keys(CATEGORY_WEIGHTS) as AssignmentCategory[];
+
+export function isCategory(value: unknown): value is AssignmentCategory {
+  return typeof value === "string" && Object.hasOwn(CATEGORY_WEIGHTS, value);
+}
+
 export type AssignmentForGrade = {
   maxPoints: number;
+  category?: string;
   submissions: SubmissionForGrade[];
 };
 
@@ -43,9 +53,10 @@ export function latestApproved(submissions: SubmissionForGrade[]) {
     )[0] ?? null;
 }
 
+// Course % = weighted average of per-category averages (each entry counts equally inside its category).
+// Categories with no graded entries are left out and the remaining weights are renormalized.
 export function courseGrade(course: { assignments: AssignmentForGrade[] }) {
-  let earned = 0;
-  let possible = 0;
+  const entries: Record<AssignmentCategory, number[]> = { test: [], quiz: [], homework: [] };
   let gradedCount = 0;
   for (const assignment of course.assignments) {
     const approved = latestApproved(assignment.submissions);
@@ -58,13 +69,24 @@ export function courseGrade(course: { assignments: AssignmentForGrade[] }) {
     ) {
       throw new Error("An approved grade has invalid points or approval metadata.");
     }
-    earned += Math.round(approved.earnedPoints * 100);
-    possible += Math.round(assignment.maxPoints * 100);
+    const category = isCategory(assignment.category) ? assignment.category : "homework";
+    entries[category].push(Math.round(approved.earnedPoints * 100) / Math.round(assignment.maxPoints * 100) * 100);
     gradedCount++;
   }
   if (!gradedCount) return null;
-  const percentage = earned / possible * 100;
-  return { percentage, letter: letterGradeFor(percentage), gradedCount, assignmentCount: course.assignments.length };
+  let weighted = 0;
+  let totalWeight = 0;
+  const categories = [];
+  for (const category of CATEGORIES) {
+    const list = entries[category];
+    if (!list.length) continue;
+    const average = list.reduce((sum, value) => sum + value, 0) / list.length;
+    weighted += average * CATEGORY_WEIGHTS[category];
+    totalWeight += CATEGORY_WEIGHTS[category];
+    categories.push({ category, average, count: list.length, weight: CATEGORY_WEIGHTS[category] });
+  }
+  const percentage = Math.min(100, Math.round(weighted / totalWeight * 1e9) / 1e9);
+  return { percentage, letter: letterGradeFor(percentage), gradedCount, assignmentCount: course.assignments.length, categories };
 }
 
 export function studentSummary(courses: CourseForGrade[]) {
@@ -100,7 +122,9 @@ export function studentSummary(courses: CourseForGrade[]) {
 }
 
 export function formatGpa(value: number | null) {
-  return value === null ? "--" : value.toFixed(2);
+  if (value === null) return "--";
+  const text = value.toFixed(3);
+  return text.endsWith("0") ? text.slice(0, -1) : text;
 }
 
 export function formatCredits(value: number) {

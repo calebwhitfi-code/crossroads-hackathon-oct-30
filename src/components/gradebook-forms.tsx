@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { deleteAssignment, deleteCourse, saveAssignment, saveCourse, saveManualGrade } from "@/app/gradebook-actions";
 import type { MutationState } from "@/lib/form-validation";
+import { CATEGORIES, CATEGORY_LABELS } from "@/lib/grades";
 
 const initialState: MutationState = { error: null };
 
@@ -105,7 +106,7 @@ export function CourseForm({ initial, students }: {
 }
 
 export function AssignmentForm({ initial }: { initial: {
-  id: string; courseId: string; version: number; title: string; description: string | null; maxPoints: number; dueAt: string;
+  id: string; courseId: string; version: number; title: string; description: string | null; maxPoints: number; category: string; dueAt: string;
 } }) {
   const [state, action, pending] = useActionState(saveAssignment, initialState);
   return (
@@ -122,6 +123,11 @@ export function AssignmentForm({ initial }: { initial: {
         </div>
         <Field label="Possible points" hint="Cannot be changed once this assignment has a submission.">
           <input name="maxPoints" type="number" min="0.01" max="100000" step="0.01" defaultValue={value(state, "maxPoints", initial.maxPoints)} className="form-input" required />
+        </Field>
+        <Field label="Category" hint="Tests 50%, Quizzes 20%, Homework 30% of the course grade.">
+          <select name="category" defaultValue={value(state, "category", initial.category)} className="form-input" required>
+            {CATEGORIES.map((item) => <option key={item} value={item}>{CATEGORY_LABELS[item]}</option>)}
+          </select>
         </Field>
         <Field label="Due date (optional)">
           <input name="dueAt" type="date" defaultValue={value(state, "dueAt", initial.dueAt)} className="form-input" />

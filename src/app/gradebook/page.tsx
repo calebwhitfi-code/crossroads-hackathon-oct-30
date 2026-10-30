@@ -49,7 +49,7 @@ export default async function GradebookPage() {
       <aside className="rounded-xl border border-border p-5 text-xs leading-7 text-muted">
         <h2 className="font-semibold text-ink">How these numbers work</h2>
         <p>A: 90-100% / B: 80-89.99% / C: 70-79.99% / D: 60-69.99% / F: below 60%. GPA points: 4 / 3 / 2 / 1 / 0. Passing weighted courses add 1 point. GPA is weighted by course credits and uses grades 9-12 only.</p>
-        <p>Course percentages use total earned points divided by total possible points on graded assignments. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA. A failed course (below 60%) earns 0 credits but still counts in GPA at 0.0 points.</p>
+        <p>Course percentages are a weighted average of category averages: Tests 50%, Quizzes 20%, Homework 30%. Each category is the average of its graded entries (each entry as a percentage of its possible points). If a category has no graded entries yet, its weight is shared proportionally among the categories that do. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA. A failed course (below 60%) earns 0 credits but still counts in GPA at 0.0 points.</p>
       </aside>
     </div>
   );

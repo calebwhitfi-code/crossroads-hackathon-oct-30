@@ -63,6 +63,7 @@ export function pageTools(browser, baseUrl) {
   };
   const submit = async (form, { novalidate = false } = {}) => {
     await delay(800);
+    if (form === "photo-grade" && !novalidate) return; // choosing a photo already submits the form
     await browser.evaluate(`(() => { const f = document.querySelector('form[data-form="${form}"]'); f.noValidate = ${novalidate}; f.requestSubmit(); })()`);
   };
   const openAll = () => browser.evaluate("document.querySelectorAll('details').forEach((d) => { d.open = true; })");
@@ -72,16 +73,21 @@ export function pageTools(browser, baseUrl) {
     await waitFor(() => browser.evaluate(`!!document.querySelector('input[name="${name}"]')`));
     return browser.evaluate(`(() => { const b = document.querySelector('input[name="${name}"]'); if (!b.checked) b.click(); })()`);
   };
-  const attach = (name, type, buffer) => browser.evaluate(`(async () => {
+  const approve = async () => {
+    await waitFor(() => browser.evaluate(`!!document.querySelector('form[data-form="approve"] button[name="approve"]')`));
+    await delay(800);
+    return browser.evaluate(`document.querySelector('form[data-form="approve"] button[name="approve"]').click()`);
+  };
+  const attach = async (name, type, buffer) => { await delay(800); return browser.evaluate(`(async () => {
     const bytes = Uint8Array.from(atob(${JSON.stringify(buffer.toString("base64"))}), (c) => c.charCodeAt(0));
     const input = document.querySelector('input[name="photo"]');
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], ${JSON.stringify(name)}, { type: ${JSON.stringify(type)} }));
     input.files = transfer.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
-  })()`);
+  })()`); };
   const profile = (value) => browser.command("Network.setCookie", { name: "homeschool-demo-profile", value: encodeURIComponent(value), url: baseUrl });
-  return { setValue, submit, openAll, body, bodyHas, check, attach, profile, go: (path) => browser.navigate(`${baseUrl}${path}`) };
+  return { setValue, submit, approve, openAll, body, bodyHas, check, attach, profile, go: (path) => browser.navigate(`${baseUrl}${path}`) };
 }
 
 export const mainText = (html) => plain(html.match(/<main[\s\S]*<\/main>/)?.[0] ?? html);
@@ -104,7 +110,7 @@ export async function seedSpecData(db) {
       data: {
         studentId: "qa-student", name, subject: "QA", credits, gradeLevel: 9, academicYear: "2026-2027", completed: true,
         assignments: { create: grades.map(([title, earned]) => ({
-          title, maxPoints: 100,
+          title, maxPoints: 100, category: title.startsWith("Test") ? "test" : title.startsWith("Quiz") ? "quiz" : "homework",
           submissions: { create: { feedback: "", status: "approved", source: "manual", earnedPoints: earned, letterGrade: earned >= 90 ? "A" : earned >= 80 ? "B" : earned >= 70 ? "C" : earned >= 60 ? "D" : "F", approvedAt: new Date() } },
         })) },
       },

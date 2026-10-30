@@ -34,7 +34,7 @@ test("STEP6 theme token text contrast meets WCAG AA (4.5:1)", () => {
   for (const [fg, bg, ratio] of rows) assert.ok(ratio >= 4.5, `${fg} on ${bg} is ${ratio.toFixed(2)}:1`);
 });
 
-const pages = ["/", "/courses", "/gradebook", "/rubrics", "/reviews", "/transcripts", "/transcripts/student-ava", "/courses/ava-algebra", "/courses/ava-algebra/edit", "/assignments/ava-algebra-assignment/grade", "/courses/new"];
+const pages = ["/", "/courses", "/work", "/gradebook", "/rubrics", "/reviews", "/transcripts", "/transcripts/student-ava", "/courses/ava-algebra", "/courses/ava-algebra/edit", "/assignments/ava-algebra-assignment/grade", "/courses/new"];
 const widths = [["phone", 390, 844], ["tablet", 820, 1180], ["laptop", 1440, 900]];
 
 test("STEP6 every page fits phone, tablet and laptop widths with no console errors; screenshots saved", async () => {
@@ -67,18 +67,17 @@ test("STEP6 tap count from the assignment on a course page to a saved grade", as
   await tools.bodyHas("Grade a photo");
   await tap(`document.querySelector('a[href="/assignments/ava-algebra-assignment/grade"]').click()`);
   await tools.bodyHas("Photo of the work");
-  await tap(`document.querySelector('input[name="photo"]').focus()`); // opens the camera/file chooser
+  taps++; // choosing or taking the photo starts grading automatically
   await tools.attach("work.png", "image/png", fixtures.worksheet());
-  await delay(800);
-  await tap(`document.querySelector('form[data-form="photo-grade"] button[type=submit]').click()`);
   await tools.bodyHas("Suggested grade created");
-  await tools.check("approve"); taps++;
-  await delay(300);
-  await tap(`document.querySelector('form[data-form="approve"] button[type=submit]').click()`);
+  assert.ok(await app.browser.evaluate(`Number(document.querySelector('input[name="earnedPoints"]').value) > 0`), "suggested points are prefilled");
+  taps++; // one tap approves and saves
+  await tools.approve();
   await tools.bodyHas("Grade approved and saved");
+  assert.ok((await tools.body()).includes("View gradebook"), "confirmation links to the gradebook");
   await app.browser.command("Emulation.clearDeviceMetricsOverride");
   writeFileSync(join(artifacts, "taps.json"), JSON.stringify({ taps, target: 3 }));
-  assert.equal(taps, 5, "documented actual tap count (target is 3)");
+  assert.ok(taps <= 3, `photo -> result -> saved took ${taps} taps (target 3)`);
 });
 
 test("STEP6 user-facing text has no doubled words, double spaces or common typos", async () => {

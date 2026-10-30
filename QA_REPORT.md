@@ -1,13 +1,13 @@
 # Homestead QA report
 
-Run with `npm test` (build + 56 automated tests, all passing after fixes) and `npm run typecheck`. Tests: `tests/qa-gradebook`, `qa-photo`, `qa-security`, `qa-ui`. Screenshots go to the gitignored `qa-artifacts/`.
+Phase 6 verification: production build, all 61 automated tests, and `npm run typecheck` pass. Run with `npm test`; test files run sequentially to avoid competing headless browsers. Coverage includes foundation, grading, transcripts, student work, and the QA suites. Screenshots go to the gitignored `qa-artifacts/`.
 
 | # | Check | Expected | Actual | Status |
 |---|-------|----------|--------|--------|
 | 1 | Spec data: credits earned | 4.0 | 4.0 on dashboard, gradebook, transcript, print view | PASS |
-| 2 | Spec data: credit-weighted GPA | 2.875 | 2.875 computed; UI shows 2.88 (2 decimals) | PASS (display rounding noted) |
+| 2 | Spec data: credit-weighted GPA | 2.875 | 2.875 computed and displayed; up to 3 decimal places | PASS |
 | 3 | Spec data: letters A/B/C/A/D | as spec | match | PASS |
-| 4 | Spec data: course percentages | 93.5 / 85.5 / 77.6 / 100 / 61.1 | App grades by total points, no categories: 93.0 / 85.0 / 76.6 / 100 / 61.0 | FAIL (policy decision, not changed) |
+| 4 | Spec data: course percentages | 93.5 / 85.5 / 77.6 / 100 / 61.1 | Match with Tests 50%, Quizzes 20%, Homework 30%; empty-category weights renormalize | FIXED |
 | 5 | Dashboard "Graded courses" count | number | showed `[object Object],...` | FIXED |
 | 6 | Boundaries 89.9 B, 90 A, 59.9 F, 0, 100 | correct | correct | PASS |
 | 7 | Add/edit/delete grade updates %, letter, GPA | immediate | immediate | PASS |
@@ -33,20 +33,21 @@ Run with `npm test` (build + 56 automated tests, all passing after fixes) and `n
 | 27 | `.env` / `*.db` ignored, never committed | yes | yes | PASS |
 | 28 | Photos not publicly reachable | none stored/served | no `public/`, no API routes, photos not persisted | PASS |
 | 29 | Authentication | login | App has no login: any visitor can switch to any parent profile. Parent-only rules guard against student UI, not against a real attacker | FAIL (by design, needs your decision) |
-| 30 | Layout at 390 / 820 / 1440 px | no overflow | none (11 pages) | PASS |
+| 30 | Layout at 390 / 820 / 1440 px | no overflow | none (12 pages); student work also handles long unbroken titles, instructions, and feedback | PASS |
 | 31 | Console errors | none | `/favicon.ico` 404 on every page | FIXED (added `src/app/icon.svg`) |
 | 32 | Text contrast (ink, muted, accent on page/card/raised) | >= 4.5:1 | all pass | PASS |
-| 33 | Taps photo -> result -> saved | <= 3 | 5 (open grader, choose photo, Grade, tick approve, Approve) | FAIL (design decision) |
+| 33 | Taps photo -> result -> saved | <= 3 | 3 app actions (open grader, choose photo to start grading, Approve & save); native camera/file-picker interactions vary | FIXED |
 | 34 | Loading state while grading | shown | "Grading your photo..." status | PASS |
 | 35 | Typos / doubled words | none | none | PASS |
 | 36 | Stale copy ("Phase 2", etc.) | current | outdated | FIXED |
 
-Totals: PASS 21, FIXED 9, FAIL 3, MANUAL 1 (counted from the table; row 2 counted as PASS).
+Totals: PASS 22, FIXED 12, FAIL 1, MANUAL 1.
+
+Student work additionally passes checks for latest-approved feedback only, hidden pending suggestions, sibling/family visibility, read-only controls for both roles, zero scores, empty states, Home/navigation links, and visible keyboard focus. Fixed a long-course-name overflow and a photo-flow test that attempted to edit the review form before it finished rendering.
 
 ## Still failing / decisions for you
-- Row 4: no Tests/Quizzes/Homework weighting. Letters, credits and GPA still match. Say if you want weighted categories (feature work).
-- Row 29: no login.
-- Row 33: 5 taps versus a target of 3.
+- Row 29: no login. Profile selection is a demo convenience, not authentication. Use fictional data only and do not expose the demo publicly.
+- Real AI grading and the real-phone checks below remain outside this local-demo phase.
 
 ## Manual real-phone checklist
 - [ ] Camera capture opens from the photo input (iOS Safari, Android Chrome).

@@ -54,12 +54,15 @@ after(async () => {
   }
 });
 
-const setValue = (selector, text) => browser.evaluate(`(() => {
+const setValue = async (selector, text) => {
+  await waitFor(() => browser.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`));
+  return browser.evaluate(`(() => {
   const el = document.querySelector(${JSON.stringify(selector)});
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
   Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(text)});
   el.dispatchEvent(new Event("input", { bubbles: true }));
 })()`);
+};
 const submit = async (form) => { await delay(1000); await browser.evaluate(`document.querySelector('form[data-form="${form}"]').requestSubmit()`); };
 const pathIs = (fragment) => waitFor(async () => (await browser.evaluate("location.pathname")).includes(fragment));
 
@@ -105,14 +108,15 @@ test("rubric, photo grading, validation and parent approval work end to end", as
   assert.ok(pending.criteriaScores.every((score) => score.earnedPoints <= score.maxPoints && score.description));
 
   await setValue('input[name="earnedPoints"]', String(assignment.maxPoints + 1));
-  await browser.evaluate('document.querySelector(\'input[name="approve"]\').click(); document.querySelector(\'form[data-form="approve"]\').noValidate = true');
-  await submit("approve");
+  await browser.evaluate('document.querySelector(\'form[data-form="approve"]\').noValidate = true');
+  await delay(1000);
+  await browser.evaluate(`document.querySelector('form[data-form="approve"] button[name="approve"]').click()`);
   await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("between 0 and"));
   assert.equal((await db.submission.findUnique({ where: { id: pending.id } })).status, "pending_review");
 
   await setValue('input[name="earnedPoints"]', "1");
-  await browser.evaluate('document.querySelector(\'form[data-form="approve"]\').noValidate = false; const box = document.querySelector(\'input[name="approve"]\'); if (!box.checked) box.click()');
-  await submit("approve");
+  await delay(1000);
+  await browser.evaluate(`document.querySelector('form[data-form="approve"] button[name="approve"]').click()`);
   await pathIs("/reviews");
   await waitFor(async () => (await db.submission.findUnique({ where: { id: pending.id } })).status === "approved");
   const approved = await db.submission.findUnique({ where: { id: pending.id } });

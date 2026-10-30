@@ -20,15 +20,6 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-xl font-semibold tracking-tight">homestead<span className="text-accent">.</span></span>
         </Link>
         <Navigation />
-        <div className="mt-8 hidden space-y-4 px-4 lg:block">
-          <p className="text-xs font-semibold tracking-widest text-muted uppercase">Coming next</p>
-          {["Student work", "Polish"].map((label, index) => (
-            <div key={label} className="flex items-center justify-between gap-3 text-sm text-muted">
-              <span>{label}</span>
-              <span className="rounded-md border border-border px-2 py-1 text-[10px]">Phase {index + 5}</span>
-            </div>
-          ))}
-        </div>
         <div className="mt-6 border-t border-border pt-5 lg:mt-auto lg:pt-6">
           <ProfileSwitcher
             active={profile.value}
@@ -52,7 +43,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </main>
         <footer className="no-print mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-5 py-6 text-xs text-muted sm:px-9 lg:px-12">
           <span>Made for learning. Built around your family.</span>
-          <span>Gradebook demo / Phase 4</span>
+          <span>Homestead demo / Phase 6</span>
         </footer>
       </div>
     </div>

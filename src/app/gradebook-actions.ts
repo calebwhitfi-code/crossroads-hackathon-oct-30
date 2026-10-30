@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { parentFamily } from "@/lib/parent";
 import { courseInclude } from "@/lib/gradebook";
-import { courseGrade, latestApproved, letterGradeFor } from "@/lib/grades";
+import { courseGrade, isCategory, latestApproved, letterGradeFor } from "@/lib/grades";
 import {
   academicYear, checked, dueDate, failedMutation, InputError, numberField, text,
   type MutationState,
@@ -87,6 +87,12 @@ export async function deleteCourse(_previous: MutationState, form: FormData): Pr
   finish("/courses?saved=deleted");
 }
 
+function category(form: FormData) {
+  const value = text(form, "category", "Category", 20);
+  if (!isCategory(value)) throw new InputError("Choose Test, Quiz, or Homework as the category.");
+  return value;
+}
+
 export async function saveAssignment(_previous: MutationState, form: FormData): Promise<MutationState> {
   let courseId: string;
   try {
@@ -97,6 +103,7 @@ export async function saveAssignment(_previous: MutationState, form: FormData): 
       title: text(form, "title", "Assignment title", 160),
       description: text(form, "description", "Instructions", 5000, false) || null,
       maxPoints: numberField(form, "maxPoints", "Possible points", 0.01, 100000),
+      category: category(form),
       dueAt: dueDate(form),
     };
     await db.$transaction(async (tx) => {

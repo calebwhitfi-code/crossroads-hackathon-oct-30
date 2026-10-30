@@ -145,7 +145,7 @@ test("STEP3 e2e: crooked, dim and normal photos grade; double-click makes one su
   await open(tools, assignment.id);
   await tools.attach("worksheet.png", "image/png", fixtures.worksheet());
   await delay(800);
-  await app.browser.evaluate(`(() => { const f = document.querySelector('form[data-form="photo-grade"]'); f.requestSubmit(); f.requestSubmit(); })()`);
+  await app.browser.evaluate(`(() => { const f = document.querySelector('form[data-form="photo-grade"]'); if (f) { f.requestSubmit(); f.requestSubmit(); } })()`);
   await tools.bodyHas("Suggested grade created");
   await delay(1500);
   const pending = await app.db.submission.findMany({ where: { assignmentId: assignment.id, status: "pending_review" }, include: { criteriaScores: true } });
@@ -161,8 +161,7 @@ test("STEP3 e2e: crooked, dim and normal photos grade; double-click makes one su
   const student = await app.db.student.findUnique({ where: { id: "student-ava" }, include: { courses: { include: { assignments: { include: { submissions: { where: { status: "approved" } } } } } } } });
   const gpaBefore = formatGpa(studentSummary(student.courses).unweightedGpa);
   await tools.setValue('input[name="earnedPoints"]', "1");
-  await tools.check("approve");
-  await tools.submit("approve");
+  await tools.approve();
   await tools.bodyHas("Grade approved and saved");
   const approved = await app.db.submission.findUnique({ where: { id: pending[0].id } });
   assert.equal(approved.status, "approved");

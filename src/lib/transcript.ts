@@ -1,4 +1,4 @@
-import { courseGrade, studentSummary, type CourseForGrade, type LetterGrade } from "./grades.ts";
+import { courseGrade, gradingScaleFor, studentSummary, type CourseForGrade, type GradingScale, type LetterGrade } from "./grades.ts";
 
 type TranscriptCourse = CourseForGrade & {
   id: string;
@@ -18,6 +18,7 @@ export type TranscriptRow = {
   letter: LetterGrade;
   percentage: number;
   creditsEarned: number;
+  gradingScale: GradingScale;
 };
 
 export type TranscriptYear = {
@@ -38,6 +39,7 @@ export function buildTranscript(courses: TranscriptCourse[]) {
       gradeLevel: course.gradeLevel, credits: course.credits, weighted: course.weighted,
       letter: grade.letter, percentage: grade.percentage,
       creditsEarned: course.gradeLevel >= 9 && course.gradeLevel <= 12 && grade.letter !== "F" ? course.credits : 0,
+      gradingScale: gradingScaleFor(course),
     };
     const list = rows.get(course.academicYear) ?? [];
     list.push({ row, course });

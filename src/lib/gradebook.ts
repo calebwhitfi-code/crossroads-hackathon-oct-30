@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getProfileContext } from "@/lib/profile";
 
 export const courseInclude = {
+  gradingRubric: { select: { id: true, name: true } },
   assignments: {
     orderBy: [{ dueAt: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     include: {

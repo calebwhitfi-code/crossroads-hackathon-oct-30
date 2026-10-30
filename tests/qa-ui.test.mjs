@@ -34,7 +34,7 @@ test("STEP6 theme token text contrast meets WCAG AA (4.5:1)", () => {
   for (const [fg, bg, ratio] of rows) assert.ok(ratio >= 4.5, `${fg} on ${bg} is ${ratio.toFixed(2)}:1`);
 });
 
-const pages = ["/", "/courses", "/work", "/gradebook", "/rubrics", "/reviews", "/transcripts", "/transcripts/student-ava", "/courses/ava-algebra", "/courses/ava-algebra/edit", "/assignments/ava-algebra-assignment/grade", "/courses/new"];
+const pages = ["/", "/courses", "/work", "/gradebook", "/rubrics", "/reviews", "/transcripts", "/transcripts/student-ava", "/courses/ava-algebra", "/courses/ava-algebra/edit", "/courses/ava-algebra/grading-guide", "/assignments/ava-algebra-assignment/grade", "/courses/new"];
 const widths = [["phone", 390, 844], ["tablet", 820, 1180], ["laptop", 1440, 900]];
 
 test("STEP6 every page fits phone, tablet and laptop widths with no console errors; screenshots saved", async () => {

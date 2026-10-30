@@ -186,7 +186,7 @@ export async function saveManualGrade(_previous: MutationState, form: FormData):
       await tx.submission.create({
         data: {
           assignmentId: id, source: "manual", status: "approved", earnedPoints, feedback,
-          letterGrade: letterGradeFor(earnedPoints / assignment.maxPoints * 100), approvedAt: new Date(),
+          letterGrade: letterGradeFor(earnedPoints / assignment.maxPoints * 100, assignment.course), approvedAt: new Date(),
         },
       });
       await tx.assignment.update({ where: { id }, data: { version: { increment: 1 } } });

@@ -5,6 +5,7 @@ const messages: Record<string, string> = {
   assignment: "Assignment saved.",
   grade: "Grade approved and saved.",
   rubric: "Rubric saved.",
+  guide: "Grading guide approved and applied to this course.",
   suggested: "Suggested grade created. Review it below before approving.",
   approved: "Grade approved and saved.",
   discarded: "Suggestion discarded.",

@@ -62,10 +62,17 @@ model Course {
   academicYear String
   completed    Boolean      @default(false)
   version      Int          @default(0)
+  gradeAMin    Float        @default(90)
+  gradeBMin    Float        @default(80)
+  gradeCMin    Float        @default(70)
+  gradeDMin    Float        @default(60)
+  gradingRubricId String?
+  gradingRubric Rubric?     @relation(fields: [gradingRubricId], references: [id], onDelete: SetNull)
   assignments  Assignment[]
   createdAt    DateTime     @default(now())
 
   @@index([studentId, academicYear])
+  @@index([gradingRubricId])
 }
 
 model Assignment {
@@ -96,6 +103,7 @@ model Rubric {
   isTemplate  Boolean           @default(false)
   criteria    RubricCriterion[]
   assignments Assignment[]
+  courses     Course[]
   createdAt   DateTime          @default(now())
 
   @@index([familyId])

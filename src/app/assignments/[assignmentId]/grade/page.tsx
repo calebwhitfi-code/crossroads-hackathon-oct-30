@@ -23,7 +23,7 @@ export default async function GradePhotoPage({ params }: { params: Promise<{ ass
       <GradingProviderNotice provider={grader.provider} notice={grader.providerNotice} />
       {grader.provider === "ai" && <p className="text-sm leading-7 text-muted">This photo, assignment instructions, and rubric will be sent to Anthropic for grading. Homestead discards the photo after processing; only the suggestion is saved.</p>}
       {rubrics.length
-        ? <PhotoGradeForm assignment={{ id: assignment.id, version: assignment.version, rubricId: assignment.rubricId }} rubrics={rubrics} />
+        ? <PhotoGradeForm assignment={{ id: assignment.id, version: assignment.version, rubricId: course.gradingRubricId ?? assignment.rubricId }} rubrics={rubrics} />
         : <p className="rounded-xl border border-border bg-card p-6 text-sm leading-7 text-muted">Create a rubric first. <Link href="/rubrics" className="text-link">Open rubrics</Link></p>}
     </div>
   );

@@ -148,7 +148,7 @@ export async function approveSubmission(_previous: MutationState, form: FormData
         where: { id, status: "pending_review" },
         data: {
           status: "approved", earnedPoints, feedback, approvedAt: new Date(),
-          letterGrade: letterGradeFor(earnedPoints / submission.assignment.maxPoints * 100),
+          letterGrade: letterGradeFor(earnedPoints / submission.assignment.maxPoints * 100, submission.assignment.course),
         },
       });
       if (claimed.count !== 1) throw new InputError("This submission was already reviewed.");

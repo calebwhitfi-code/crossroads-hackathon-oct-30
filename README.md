@@ -79,6 +79,14 @@ The Prisma schema includes families, students, courses, assignments, reusable ru
 
 Assignments have Test, Quiz, or Homework categories, weighted 50%, 20%, and 30% respectively. Each category averages its graded assignment percentages equally; empty categories are excluded and remaining weights are renormalized. Existing assignments migrate to Homework. Only the latest approved grade counts; pending and ungraded work never counts as zero.
 
+## Photograph a curriculum grading guide
+
+From an open course, choose **Import grading guide**. Upload one or two photos of its rubric and grading-scale pages (JPEG, PNG, GIF, or WebP, up to 5 MB each). With AI enabled, Homestead extracts an editable draft. Nothing is saved or applied until a parent checks the rules, selects which parts to use, and confirms **Approve & apply rules**. Photos are discarded after extraction.
+
+The rubric becomes a reusable template and the course's default photo-grading rubric; parents can still select another rubric before grading an assignment. The scale sets that course's minimum percentages for A, B, C, and D; F is below D. Existing courses retain the default 90/80/70/60 cutoffs unless a parent changes them. Changing a scale recalculates letters, GPA, earned credits, and transcripts from existing approved points; it does not approve any new scores or rewrite historical rubric-score snapshots. Completed courses must be reopened first.
+
+No Notgrass or other publisher's scale is built in or assumed. Missing or unreadable rules are flagged rather than invented. Mock cannot extract publisher rules: when AI is unavailable or extraction fails, enter the rules manually on the same page. This importer supports up to five rubric criteria and A/B/C/D/F percentage cutoffs, not plus/minus grading, raw-point deduction formulas, or category-weight changes. Check those details against the actual curriculum before saving.
+
 Phases 1-6 are complete for the local demo. Real authentication remains separate future work; the calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
 
 ## Phase 3: photo grading

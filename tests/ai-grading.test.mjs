@@ -5,6 +5,9 @@ import sharp from "sharp";
 import { gradeSubmission, getGraderStatus, validateAiGradingResult } from "../src/lib/grading-provider.ts";
 import { gradingImageType, prepareGradingImage } from "../src/lib/grading-image.ts";
 import { fixtures } from "./fixtures.mjs";
+import { extractGradingGuide, validateGradingGuide } from "../src/lib/grading-guide.ts";
+import { courseGrade, letterGradeFor, studentSummary } from "../src/lib/grades.ts";
+import { buildTranscript } from "../src/lib/transcript.ts";
 
 const rubric = {
   name: "Essay",
@@ -188,4 +191,63 @@ test("EXIF rotation is applied losslessly before the API receives the image", as
     return response();
   });
   assert.equal((await gradeSubmission(rotated.toString("base64"), rubric)).provider, "ai");
+});
+
+const guide = () => ({
+  rubric: { name: "Sample history rubric", description: "Synthetic test rules, not publisher rules.", criteria: [{ name: "Accuracy", description: "Answers reflect the assigned reading.", maxPoints: 20 }] },
+  scale: { gradeAMin: 93, gradeBMin: 85, gradeCMin: 75, gradeDMin: 65 },
+  notes: "Check these rules against the page before saving.",
+});
+
+test("guide extraction reads two photos into an editable draft without assuming publisher rules", async () => {
+  mock.method(globalThis, "fetch", async (input, init) => {
+    const body = await new Request(input, init).json();
+    assert.deepEqual(body.messages[0].content.map((block) => block.type), ["image", "image", "text"]);
+    assert.match(body.system, /Never invent Notgrass/);
+    assert.match(body.system, /return scale: null/);
+    return response(JSON.stringify(guide()));
+  });
+  assert.deepEqual(await extractGradingGuide([image(), image()]), guide());
+});
+
+test("guide extraction never fabricates rules when AI is unavailable or output is incomplete", async () => {
+  process.env.GRADER = "mock";
+  const fetch = mock.method(globalThis, "fetch", () => { throw new Error("No request expected"); });
+  await assert.rejects(extractGradingGuide([image()]), /No rules were extracted.*manually/);
+  assert.equal(fetch.mock.callCount(), 0);
+  process.env.GRADER = "ai";
+  fetch.mock.restore();
+  mock.method(globalThis, "fetch", () => response("invalid JSON"));
+  await assert.rejects(extractGradingGuide([image()]), /Nothing was saved/);
+  assert.deepEqual(validateGradingGuide({ rubric: null, scale: null, notes: "Unreadable page." }), { rubric: null, scale: null, notes: "Unreadable page." });
+});
+
+test("guide validation rejects invented fields, ambiguous criteria, invalid points, and unordered scales", () => {
+  const mutate = (change) => { const raw = guide(); change(raw); return raw; };
+  for (const raw of [
+    mutate((value) => { value.scale.gradeBMin = 99; }),
+    mutate((value) => { value.rubric.criteria[0].maxPoints = -1; }),
+    mutate((value) => { value.rubric.criteria.push({ ...value.rubric.criteria[0] }); }),
+    mutate((value) => { delete value.scale.gradeDMin; }),
+    mutate((value) => { value.extra = "not supported"; }),
+  ]) assert.throws(() => validateGradingGuide(raw));
+});
+
+test("custom course scales determine letters, GPA, credits, and transcripts without changing points", () => {
+  const course = {
+    id: "history", name: "Sample history", subject: "History", ...guide().scale,
+    credits: 1, weighted: false, gradeLevel: 10, academicYear: "2026-2027", completed: true,
+    assignments: [{ maxPoints: 100, submissions: [{
+      id: "approved", status: "approved", earnedPoints: 91, approvedAt: new Date(), createdAt: new Date(),
+    }] }],
+  };
+  assert.equal(letterGradeFor(91), "A");
+  assert.equal(courseGrade(course).letter, "B");
+  assert.equal(studentSummary([course]).unweightedGpa, 3);
+  assert.equal(buildTranscript([course]).years[0].rows[0].letter, "B");
+  course.assignments[0].submissions[0].earnedPoints = 62;
+  assert.equal(courseGrade(course).letter, "F");
+  assert.equal(studentSummary([course]).earnedCredits, 0);
+  assert.equal(buildTranscript([course]).cumulative.earnedCredits, 0);
+  assert.throws(() => letterGradeFor(90, { gradeAMin: 70, gradeBMin: 80 }));
 });

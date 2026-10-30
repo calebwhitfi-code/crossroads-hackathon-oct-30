@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { GradeSummary } from "@/components/grade-summary";
 import { visibleStudents } from "@/lib/gradebook";
-import { courseGrade, formatCredits, formatGpa, formatPercentage, studentSummary } from "@/lib/grades";
+import { courseGrade, formatCredits, formatGpa, formatGradingScale, formatPercentage, studentSummary } from "@/lib/grades";
 
 export const metadata = { title: "Gradebook" };
 
@@ -33,7 +33,7 @@ export default async function GradebookPage() {
                       const grade = courseGrade(course);
                       return (
                         <div key={course.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
-                          <div className="min-w-0"><Link href={`/courses/${course.id}`} className="text-link break-words">{course.name}</Link>{course.curriculum && <p className="text-xs leading-5 break-words text-muted">{course.curriculum}</p>}<p className="mt-1 text-xs leading-5 text-muted">{formatCredits(course.credits)} credits / {course.completed ? "Complete" : "In progress"}{course.weighted ? " / Weighted" : ""}{course.gradeLevel < 9 ? " / Middle school" : ""}</p></div>
+                          <div className="min-w-0"><Link href={`/courses/${course.id}`} className="text-link break-words">{course.name}</Link>{course.curriculum && <p className="text-xs leading-5 break-words text-muted">{course.curriculum}</p>}<p className="mt-1 text-xs leading-5 text-muted">{formatCredits(course.credits)} credits / {course.completed ? "Complete" : "In progress"}{course.weighted ? " / Weighted" : ""}{course.gradeLevel < 9 ? " / Middle school" : ""}</p><p className="mt-1 text-xs leading-6 text-muted">{formatGradingScale(course)}</p></div>
                           <p className="text-sm font-semibold text-accent">{grade ? `${grade.letter} / ${formatPercentage(grade.percentage)}` : "No grades yet"}</p>
                         </div>
                       );
@@ -48,8 +48,8 @@ export default async function GradebookPage() {
       })}
       <aside className="rounded-xl border border-border p-5 text-xs leading-7 text-muted">
         <h2 className="font-semibold text-ink">How these numbers work</h2>
-        <p>A: 90-100% / B: 80-89.99% / C: 70-79.99% / D: 60-69.99% / F: below 60%. GPA points: 4 / 3 / 2 / 1 / 0. Passing weighted courses add 1 point. GPA is weighted by course credits and uses grades 9-12 only.</p>
-        <p>Course percentages are a weighted average of category averages: Tests 50%, Quizzes 20%, Homework 30%. Each category is the average of its graded entries (each entry as a percentage of its possible points). If a category has no graded entries yet, its weight is shared proportionally among the categories that do. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA. A failed course (below 60%) earns 0 credits but still counts in GPA at 0.0 points.</p>
+        <p>Default scale: A: 90-100% / B: 80-89.99% / C: 70-79.99% / D: 60-69.99% / F: below 60%. Each course can use a parent-approved curriculum scale, shown with the course. GPA points: 4 / 3 / 2 / 1 / 0. Passing weighted courses add 1 point. GPA is weighted by course credits and uses grades 9-12 only.</p>
+        <p>Course percentages are a weighted average of category averages: Tests 50%, Quizzes 20%, Homework 30%. Each category is the average of its graded entries (each entry as a percentage of its possible points). If a category has no graded entries yet, its weight is shared proportionally among the categories that do. Ungraded and pending-review assignments are excluded, not treated as zero. Only the latest parent-approved submission for each assignment counts. Zero-credit courses do not affect GPA. A failed course (below its D cutoff) earns 0 credits but still counts in GPA at 0.0 points.</p>
       </aside>
     </div>
   );

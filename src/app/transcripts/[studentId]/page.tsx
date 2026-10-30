@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PrintButton } from "@/components/print-button";
 import { visibleStudents } from "@/lib/gradebook";
-import { formatCredits, formatGpa, formatPercentage } from "@/lib/grades";
+import { formatCredits, formatGpa, formatGradingScale, formatPercentage } from "@/lib/grades";
 import { buildTranscript } from "@/lib/transcript";
 import { notFound } from "next/navigation";
 
@@ -45,7 +45,7 @@ export default async function TranscriptPage({ params }: { params: Promise<{ stu
                 <tbody>
                   {year.rows.map((row) => (
                     <tr key={row.id} className="border-t border-border align-top">
-                      <td className="py-3 pr-3"><span className="font-medium break-words">{row.name}</span>{row.weighted && <span className="text-muted"> (Weighted)</span>}<span className="block text-xs text-muted">{row.subject}{row.curriculum ? ` / ${row.curriculum}` : ""}</span></td>
+                      <td className="py-3 pr-3"><span className="font-medium break-words">{row.name}</span>{row.weighted && <span className="text-muted"> (Weighted)</span>}<span className="block text-xs text-muted">{row.subject}{row.curriculum ? ` / ${row.curriculum}` : ""}</span><span className="mt-1 block text-xs text-muted">Scale: {formatGradingScale(row.gradingScale)}</span></td>
                       <td className="py-3 pr-3">{row.gradeLevel}{row.gradeLevel < 9 ? " (not in GPA)" : ""}</td>
                       <td className="py-3 pr-3">{row.letter} / {formatPercentage(row.percentage)}</td>
                       <td className="py-3 pr-3">{formatCredits(row.creditsEarned)} of {formatCredits(row.credits)}</td>
@@ -62,7 +62,7 @@ export default async function TranscriptPage({ params }: { params: Promise<{ stu
           <p className="rounded-xl border border-border p-5 text-sm leading-7 text-muted">No completed courses yet. A course appears here once every assignment has an approved grade and a parent marks it complete.{isParent ? " Complete courses from the course edit page." : ""}</p>
         )}
         <footer className="space-y-2 border-t border-border pt-5 text-xs leading-6 text-muted">
-          <p>Grading scale: A 90-100, B 80-89, C 70-79, D 60-69, F below 60. GPA on a 4.0 scale; weighted courses add 1.0 for passing grades. Only completed high-school (grades 9-12) courses count toward GPA and credits.</p>
+          <p>Each course&apos;s parent-approved grading scale is listed with that course. GPA on a 4.0 scale; weighted courses add 1.0 for passing grades. Only completed high-school (grades 9-12) courses count toward GPA and credits.</p>
           <p className="print-only">Parent / administrator signature: ______________________________ Date: ______________</p>
         </footer>
       </article>

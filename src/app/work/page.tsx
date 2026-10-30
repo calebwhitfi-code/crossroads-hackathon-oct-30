@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { visibleStudents } from "@/lib/gradebook";
-import { CATEGORY_LABELS, latestApproved } from "@/lib/grades";
+import { CATEGORY_LABELS, latestApproved, letterGradeFor } from "@/lib/grades";
 
 export const metadata = { title: "Student work" };
 
@@ -38,7 +38,7 @@ export default async function StudentWorkPage() {
                       </p>
                       {assignment.description && <p className="mt-3 text-sm leading-7 break-words whitespace-pre-wrap text-muted">{assignment.description}</p>}
                       <p className="mt-3 text-sm font-semibold text-accent">
-                        {submission ? `Parent-approved score: ${submission.letterGrade} / ${submission.earnedPoints} points` : "No approved score yet"}
+                        {submission && submission.earnedPoints !== null ? `Parent-approved score: ${letterGradeFor(submission.earnedPoints / assignment.maxPoints * 100, course)} / ${submission.earnedPoints} points` : "No approved score yet"}
                       </p>
                       {submission && (
                         <div className="mt-3 border-t border-border pt-3">

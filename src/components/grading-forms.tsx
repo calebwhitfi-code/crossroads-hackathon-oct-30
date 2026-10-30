@@ -59,11 +59,14 @@ export function PhotoGradeForm({ assignment, rubrics }: {
             {rubrics.map((rubric) => <option key={rubric.id} value={rubric.id}>{rubric.name}</option>)}
           </select>
         </Field>
-        <Field label="Photo of the work" hint="Take a photo or choose one and grading starts right away. JPEG, PNG, or WebP up to 5 MB. The photo is graded and not stored.">
-          <input name="photo" type="file" accept="image/*" capture="environment" className="form-input" required onChange={(event) => {
+        <Field label="Photo of the work" hint="Take a photo or choose one and grading starts right away. JPEG, PNG, GIF, or WebP up to 5 MB; HEIC is not supported. The photo is graded and not stored.">
+          <input name="photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp" capture="environment" className="form-input" required onChange={(event) => {
             const input = event.target;
             const file = input.files?.[0];
-            if (file && file.size > 5 * 1024 * 1024) {
+            if (file && (/\.hei[cf]$/i.test(file.name) || /^image\/hei[cf]/i.test(file.type))) {
+              setFileError("HEIC/HEIF photos are not supported. Export the photo as JPEG or PNG and try again.");
+              input.value = "";
+            } else if (file && file.size > 5 * 1024 * 1024) {
               setFileError(`That photo is ${(file.size / 1048576).toFixed(1)} MB. Choose or retake a photo under 5 MB.`);
               input.value = "";
             } else {

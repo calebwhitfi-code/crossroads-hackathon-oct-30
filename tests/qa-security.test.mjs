@@ -24,13 +24,14 @@ test("STEP5 .env and the database were never committed and are ignored", () => {
   assert.doesNotMatch(git("ls-files"), /(^|\n)\.env\n|dev\.db/);
   execFileSync("git", ["check-ignore", "-q", ".env"]);
   execFileSync("git", ["check-ignore", "-q", "prisma/dev.db"]);
-  assert.match(readFileSync(".env.example", "utf8"), /AI_API_KEY=""/);
+  assert.match(readFileSync(".env.example", "utf8"), /ANTHROPIC_API_KEY=""/);
 });
 
 test("STEP5 working tree has no secrets and no NEXT_PUBLIC_ variables", () => {
   const scan = (directory) => {
     for (const name of readdirSync(directory)) {
       if (["node_modules", ".next", ".git", "qa-artifacts"].includes(name)) continue;
+      if (name.startsWith(".env") && name !== ".env.example") continue;
       const path = join(directory, name);
       if (statSync(path).isDirectory()) { scan(path); continue; }
       if (/\.(db|png|ico|tsbuildinfo)$/.test(name) || name === "package-lock.json" || path.endsWith("tests/qa-security.test.mjs")) continue;
@@ -54,6 +55,6 @@ test("STEP5 uploaded photos are not stored or served: no public/ directory, no A
   });
   for (const file of walk(".next/static").filter((path) => /\.(js|css)$/.test(path))) {
     const content = readFileSync(file, "utf8");
-    assert.doesNotMatch(content, /AI_API_KEY|GRADING_PROVIDER/, file);
+    assert.doesNotMatch(content, /AI_API_KEY|ANTHROPIC_API_KEY|GRADING_PROVIDER|GRADER_MODEL|process\.env\.GRADER|api\.anthropic\.com/, file);
   }
 });

@@ -22,6 +22,11 @@ enum SubmissionSource {
   vision
 }
 
+enum GradingProvider {
+  mock
+  ai
+}
+
 model Family {
   id        String    @id @default(cuid())
   name      String
@@ -114,6 +119,8 @@ model Submission {
   assignmentId   String
   assignment     Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   source         SubmissionSource @default(manual)
+  gradingProvider GradingProvider?
+  gradingNotice  String?
   image          String?
   extractedText  String?
   feedback       String

@@ -9,6 +9,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { createPrismaClient } from "../prisma/client.mjs";
 import { startBrowser, waitFor } from "./browser.mjs";
 import { fixtures } from "./fixtures.mjs";
+import { pageTools, plain, startApp } from "./harness.mjs";
 
 let directory;
 let db;
@@ -26,7 +27,7 @@ before(async () => {
   run("prisma/seed.mjs");
   db = createPrismaClient();
   server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "0"], {
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }, stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, GRADER: "mock", NEXT_TELEMETRY_DISABLED: "1" }, stdio: ["ignore", "pipe", "pipe"],
   });
   server.stdout.on("data", (chunk) => {
     serverOutput += chunk;
@@ -91,7 +92,7 @@ test("rubric, photo grading, validation and parent approval work end to end", as
 
   await attach("notes.png", "image/png", fixtures.notAnImage());
   await submit("photo-grade");
-  await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("JPEG, PNG, or WebP image"));
+  await waitFor(async () => (await browser.evaluate("document.body.innerText")).includes("JPEG, PNG, GIF, or WebP image"));
   assert.equal(await db.submission.count({ where: { assignmentId: assignment.id } }), before);
 
   const png = fixtures.worksheet();
@@ -104,6 +105,8 @@ test("rubric, photo grading, validation and parent approval work end to end", as
   assert.equal(pending.status, "pending_review");
   assert.equal(pending.earnedPoints, null);
   assert.equal(pending.image, null);
+  assert.equal(pending.gradingProvider, "mock");
+  assert.match(await browser.evaluate("document.body.innerText"), /Mock grader \/ simulated results/);
   assert.equal(pending.criteriaScores.length, 2);
   assert.ok(pending.criteriaScores.every((score) => score.earnedPoints <= score.maxPoints && score.description));
 
@@ -132,6 +135,7 @@ test("transcript lists completed courses, hides from other students, and prints 
       assignments: { create: { title: "Final", maxPoints: 100, submissions: { create: { feedback: "", status: "approved", earnedPoints: 92, letterGrade: "A", approvedAt: new Date() } } } },
     },
   });
+
   const html = async (path, cookie) => (await fetch(`${baseUrl}${path}`, { headers: cookie ? { cookie } : {} }));
   const page = await html("/transcripts/student-ava");
   assert.equal(page.status, 200);
@@ -167,5 +171,51 @@ test("transcript lists completed courses, hides from other students, and prints 
     assert.equal(layout.button, true);
   } finally {
     await browser.command("Emulation.setEmulatedMedia", { media: "" });
+  }
+});
+
+test("missing AI key shows a clear mock fallback that stays pending and preserves provider provenance", async () => {
+  const fallback = await startApp({ env: { GRADER: "ai", ANTHROPIC_API_KEY: "" }, prefix: "homestead-ai-fallback-" });
+  try {
+    await fallback.db.rubric.create({ data: {
+      familyId: "family-parker", name: "Fallback rubric", description: "Test",
+      criteria: { create: { name: "Accuracy", description: "Correct answers", maxPoints: 10, position: 0 } },
+    } });
+    const assignment = await fallback.db.assignment.findFirst({ where: { course: { studentId: "student-ava" } } });
+    const approvedBefore = await fallback.db.submission.count({ where: { status: "approved" } });
+    const tools = pageTools(browser, fallback.baseUrl);
+    await tools.go(`/assignments/${assignment.id}/grade`);
+    await tools.bodyHas("ANTHROPIC_API_KEY is missing");
+    await tools.attach("sample.png", "image/png", fixtures.worksheet());
+    await tools.bodyHas("Suggested grade created");
+    const suggestion = await fallback.db.submission.findFirst({ where: { assignmentId: assignment.id, source: "vision" } });
+    assert.equal(suggestion.status, "pending_review");
+    assert.equal(suggestion.earnedPoints, null);
+    assert.equal(suggestion.approvedAt, null);
+    assert.equal(suggestion.image, null);
+    assert.equal(suggestion.gradingProvider, "mock");
+    assert.match(suggestion.gradingNotice, /ANTHROPIC_API_KEY is missing/);
+    assert.equal(await fallback.db.submission.count({ where: { status: "approved" } }), approvedBefore);
+    await tools.bodyHas("Mock grader / simulated results");
+    await tools.bodyHas("ANTHROPIC_API_KEY is missing");
+    const queue = plain((await fallback.get("/reviews")).text);
+    assert.match(queue, /Mock grader \/ simulated results/);
+    assert.match(queue, /ANTHROPIC_API_KEY is missing/);
+    const student = await fallback.get("/work", "student:student-ava");
+    assert.doesNotMatch(student.text, /Fallback rubric|ANTHROPIC_API_KEY is missing/);
+  } finally {
+    await fallback.stop();
+  }
+});
+
+test("review screens show a saved AI provider even when the current configuration is mock", async () => {
+  const assignment = await db.assignment.findFirst({ where: { course: { studentId: "student-ava" } } });
+  const suggestion = await db.submission.create({ data: {
+    assignmentId: assignment.id, source: "vision", gradingProvider: "ai",
+    status: "pending_review", suggestedGrade: "8", feedback: "AI fixture feedback.",
+  } });
+  for (const path of ["/reviews", `/reviews/${suggestion.id}`]) {
+    const text = plain(await (await fetch(`${baseUrl}${path}`)).text());
+    assert.match(text, /AI grader \/ Anthropic/);
   }
 });

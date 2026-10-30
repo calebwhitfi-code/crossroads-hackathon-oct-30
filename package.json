@@ -11,14 +11,17 @@
     "db:migrate": "node --env-file=.env node_modules/prisma/build/index.js migrate dev",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:setup": "node --env-file=.env node_modules/prisma/build/index.js migrate deploy && npm run db:seed",
-    "test": "npm run build && node --env-file=.env --test --test-concurrency=1 tests/*.test.mjs"
+    "test": "npm run build && node --env-file=.env --test --test-concurrency=1 tests/*.test.mjs",
+    "test:grader": "node --env-file=.env scripts/test-grader.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
     "@prisma/adapter-better-sqlite3": "7.10.1",
     "@prisma/client": "7.10.1",
     "next": "16.4.2",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

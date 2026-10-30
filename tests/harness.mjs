@@ -19,7 +19,7 @@ export async function startApp({ env = {}, browser = false, prefix = "homestead-
   let output = "";
   let baseUrl;
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "0"], {
-    env: { ...process.env, ...env, NEXT_TELEMETRY_DISABLED: "1" }, stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, GRADER: "mock", ...env, NEXT_TELEMETRY_DISABLED: "1" }, stdio: ["ignore", "pipe", "pipe"],
   });
   server.stdout.on("data", (chunk) => {
     output += chunk;

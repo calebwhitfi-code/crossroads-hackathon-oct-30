@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SaveNotice } from "@/components/save-notice";
 import { db } from "@/lib/db";
 import { getProfileContext } from "@/lib/profile";
+import { GradingProviderNotice } from "@/components/grading-provider-notice";
 
 export const metadata = { title: "Grade reviews" };
 
@@ -25,6 +26,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
             <div className="min-w-0">
               <h2 className="break-words text-lg font-semibold">{submission.assignment.title}</h2>
               <p className="mt-1 text-xs text-muted">{submission.assignment.course.student.firstName} / {submission.assignment.course.name} / Suggested {submission.suggestedGrade} of {submission.assignment.maxPoints}</p>
+              {submission.gradingProvider && <GradingProviderNotice provider={submission.gradingProvider} notice={submission.gradingNotice} />}
             </div>
             <Link href={`/reviews/${submission.id}`} className="button-primary">Review</Link>
           </article>

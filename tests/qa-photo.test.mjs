@@ -8,6 +8,8 @@ import {
 import { fixtures } from "./fixtures.mjs";
 import { pageTools, plain, startApp } from "./harness.mjs";
 
+process.env.GRADER = "mock";
+
 const rubric = {
   name: "Essay", criteria: [
     { id: "c1", name: "Thesis", description: "Clear thesis", maxPoints: 10 },
@@ -47,10 +49,11 @@ test("STEP3 provider: five identical gradings are identical (within 0 points)", 
   assert.notDeepEqual(await gradeSubmission(b64("crooked"), rubric), runs[0]);
 });
 
-test("STEP3 provider: request contract pins temperature 0, a fixed schema and no-guessing prompt", () => {
-  assert.equal(GRADING_REQUEST.temperature, 0);
-  assert.deepEqual(GRADING_REQUEST.responseSchema.required, ["imageQuality", "criteria", "feedback", "total"]);
-  assert.deepEqual(GRADING_REQUEST.responseSchema.properties.imageQuality.enum, ["ok", "blank", "not_worksheet", "blurry", "unreadable"]);
+test("STEP3 provider: request contract pins a strict schema and no-guessing prompt", () => {
+  assert.deepEqual(GRADING_REQUEST.responseSchema.required, ["criteria", "overall_feedback"]);
+  assert.equal(GRADING_REQUEST.responseSchema.additionalProperties, false);
+  assert.equal(GRADING_REQUEST.responseSchema.properties.criteria.items.additionalProperties, false);
+  assert.doesNotMatch(JSON.stringify(GRADING_REQUEST.responseSchema), /"minimum"|"maximum"|"minLength"|"maxLength"/);
   assert.match(GRADING_REQUEST.systemPrompt, /never guess/);
   assert.match(GRADING_REQUEST.systemPrompt, /one-line reason/);
 });
@@ -109,7 +112,7 @@ async function open(tools, assignmentId) {
 
 test("STEP3 e2e: retake messages for blank, tiny and corrupt photos; nothing is saved", async () => {
   const before = await app.db.submission.count({ where: { source: "vision" } });
-  for (const [name, type, message] of [["blank", "image/png", "looks blank"], ["tiny", "image/png", "too blurry or small"], ["corrupt", "image/png", "JPEG, PNG, or WebP"], ["notAnImage", "image/jpeg", "JPEG, PNG, or WebP"]]) {
+  for (const [name, type, message] of [["blank", "image/png", "looks blank"], ["tiny", "image/png", "too blurry or small"], ["corrupt", "image/png", "JPEG, PNG, GIF, or WebP"], ["notAnImage", "image/jpeg", "JPEG, PNG, GIF, or WebP"]]) {
     await open(tools, assignment.id);
     await tools.attach(`${name}.png`, type, fixtures[name]());
     await tools.submit("photo-grade");

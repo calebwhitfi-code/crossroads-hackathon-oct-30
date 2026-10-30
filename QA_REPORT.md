@@ -1,6 +1,8 @@
 # Homestead QA report
 
-Phase 6 verification: production build, all 61 automated tests, and `npm run typecheck` pass. Run with `npm test`; test files run sequentially to avoid competing headless browsers. Coverage includes foundation, grading, transcripts, student work, and the QA suites. Screenshots go to the gitignored `qa-artifacts/`.
+Current verification: production build, all 72 automated tests, and `npm run typecheck` pass. Run with `npm test`; test files run sequentially to avoid competing headless browsers. Coverage includes foundation, grading, transcripts, student work, and the QA suites. Screenshots go to the gitignored `qa-artifacts/`.
+
+Optional Anthropic AI grading is covered with mocked API responses: request structure, score clamping, exact criterion matching, bad-key/invalid-JSON/refusal/truncation/network/timeout fallback, EXIF orientation, and persistent provider labels. Missing-key fallback also passes through the real upload/review UI without approving a grade or storing a photo. No live, billable AI request has been verified; run `npm run test:grader` after configuring your key locally.
 
 | # | Check | Expected | Actual | Status |
 |---|-------|----------|--------|--------|
@@ -16,14 +18,14 @@ Phase 6 verification: production build, all 61 automated tests, and `npm run typ
 | 10 | Cross-student / cross-family grade isolation | hidden | hidden; stale parent tab rejected | PASS |
 | 11 | Delete course/student confirmation, no orphans | confirm + cascade | confirm for courses; no student-delete UI exists; DB cascade leaves no orphans | PASS |
 | 12 | Blank / tiny / unreadable photo | "retake" message | retake message, nothing saved | PASS |
-| 13 | Blurry / not-a-worksheet photo | retake message | mock only detects blank/tiny/unreadable; real detection needs real AI | MANUAL |
+| 13 | Blurry / not-a-worksheet photo | clear uncertainty or retake message | mock only detects blank/tiny/unreadable; optional AI is instructed not to guess and to report low confidence; live photo verification pending | MANUAL |
 | 14 | Rotated, crooked, dim photos | graded, no crash | graded | PASS |
 | 15 | 10MB+ image | friendly limit message | client + server friendly message (limit 12 MB body, 5 MB image) | FIXED |
 | 16 | Per-criterion points + one-line reason | every result | enforced by validator | PASS |
 | 17 | Parent override updates gradebook + GPA | yes | yes | PASS |
 | 18 | Provider offline / rate limit / timeout / invalid JSON | clear error, nothing saved | clear error, nothing saved (no handling before) | FIXED |
-| 19 | Same input graded 5x | within ~1 pt | identical (deterministic) | PASS |
-| 20 | Temperature 0 + fixed schema + no-guess prompt for future provider | in boundary | `GRADING_REQUEST` constant | FIXED |
+| 19 | Same input graded 5x | within ~1 pt | mock is identical (deterministic); live AI consistency is unverified | PASS |
+| 20 | Strict structured output + no-guess prompt | in boundary | `GRADING_REQUEST` schema, local validation/clamping, and image-instruction defenses | FIXED |
 | 21 | Photo double-submit | one suggestion | compare-and-swap on assignment version | FIXED |
 | 22 | Negative, >100, letters, empty submits | rejected with message | rejected; negative-number message was misleading, reworded | FIXED |
 | 23 | 500-char, emoji, `<script>` names | plain text | plain text | PASS |
@@ -47,7 +49,7 @@ Student work additionally passes checks for latest-approved feedback only, hidde
 
 ## Still failing / decisions for you
 - Row 29: no login. Profile selection is a demo convenience, not authentication. Use fictional data only and do not expose the demo publicly.
-- Real AI grading and the real-phone checks below remain outside this local-demo phase.
+- The optional AI provider is implemented; live AI grading and the real-phone checks below remain unverified.
 
 ## Manual real-phone checklist
 - [ ] Camera capture opens from the photo input (iOS Safari, Android Chrome).

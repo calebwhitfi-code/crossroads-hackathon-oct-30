@@ -4,6 +4,7 @@ import { ApproveForm, DiscardForm } from "@/components/grading-forms";
 import { SaveNotice } from "@/components/save-notice";
 import { db } from "@/lib/db";
 import { getProfileContext } from "@/lib/profile";
+import { GradingProviderNotice } from "@/components/grading-provider-notice";
 
 export const metadata = { title: "Review suggested grade" };
 
@@ -26,6 +27,7 @@ export default async function ReviewPage({ params, searchParams }: {
   return (
     <div className="max-w-3xl space-y-6">
       <SaveNotice saved={(await searchParams).saved} />
+      {submission.gradingProvider && <GradingProviderNotice provider={submission.gradingProvider} notice={submission.gradingNotice} />}
       <div>
         <Link href="/reviews" className="text-link">Back to reviews</Link>
         <h1 className="mt-3 break-words text-3xl font-semibold">{assignment.title}</h1>

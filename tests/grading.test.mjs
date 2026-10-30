@@ -4,6 +4,8 @@ import { fixtures } from "./fixtures.mjs";
 import { gradeSubmission, mockGrade, validateGradingResult } from "../src/lib/grading-provider.ts";
 import { ApprovalError, checkApproval, scaleToAssignment } from "../src/lib/approval.ts";
 
+process.env.GRADER = "mock";
+
 const rubric = {
   name: "Essay",
   criteria: [

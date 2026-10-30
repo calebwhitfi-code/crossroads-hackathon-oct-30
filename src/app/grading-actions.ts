@@ -7,23 +7,16 @@ import { parentFamily } from "@/lib/parent";
 import { letterGradeFor } from "@/lib/grades";
 import { ApprovalError, checkApproval, scaleToAssignment } from "@/lib/approval";
 import { gradeSubmission, GradingError, GradingValidationError } from "@/lib/grading-provider";
+import { gradingImageType, GradingImageError, MAX_IMAGE_BYTES } from "@/lib/grading-image";
 import {
   checked, failedMutation, InputError, numberField, text, type MutationState,
 } from "@/lib/form-validation";
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_CRITERIA = 8;
 
 function finish(path: string): never {
   revalidatePath("/", "layout");
   redirect(path);
-}
-
-function imageType(bytes: Buffer) {
-  if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
-  if (bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
-  if (bytes.length > 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") return "image/webp";
-  return null;
 }
 
 export async function saveRubric(_previous: MutationState, form: FormData): Promise<MutationState> {
@@ -71,7 +64,7 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
     if (!(file instanceof File) || file.size === 0) throw new InputError("Choose or take a photo of the work.");
     if (file.size > MAX_IMAGE_BYTES) throw new InputError("The photo must be 5 MB or smaller.");
     const bytes = Buffer.from(await file.arrayBuffer());
-    if (!imageType(bytes)) throw new InputError("The photo must be a JPEG, PNG, or WebP image.");
+    gradingImageType(bytes);
 
     const assignment = await db.assignment.findFirst({
       where: { id: assignmentId, course: { student: { familyId } } }, include: { course: true },
@@ -86,7 +79,7 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
     if (!rubric.criteria.length) throw new InputError("That rubric has no criteria.");
 
     // Only the grade output is stored; the photo itself is discarded after grading.
-    const result = await gradeSubmission(bytes.toString("base64"), rubric);
+    const result = await gradeSubmission(bytes.toString("base64"), rubric, `Assignment: ${assignment.title}\nInstructions: ${assignment.description || "No additional instructions."}`);
     const rubricMax = rubric.criteria.reduce((sum, criterion) => sum + criterion.maxPoints, 0);
     const suggested = scaleToAssignment(result.total, rubricMax, assignment.maxPoints);
     const created = await db.$transaction(async (tx) => {
@@ -99,6 +92,7 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
       const submission = await tx.submission.create({
         data: {
           assignmentId, source: "vision", status: "pending_review", feedback: result.feedback,
+          gradingProvider: result.provider, gradingNotice: result.providerNotice,
           suggestedGrade: String(suggested),
           criteriaScores: {
             create: result.criteria.map((score) => {
@@ -116,10 +110,10 @@ export async function submitPhotoForGrading(_previous: MutationState, form: Form
     submissionId = created.id;
   } catch (error) {
     if (error instanceof GradingValidationError && error.message.startsWith("Invalid grading result")) {
-      console.error("Photo grading returned an invalid result:", error.message);
-      return failedMutation(new InputError("The grader returned an unusable result. Please try again. Nothing was saved."), form, "Photo grading");
+      console.error("Photo grading returned an invalid result.");
+      return failedMutation(new InputError("The grader returned an unusable result. Please try again or grade manually. Nothing was saved."), form, "Photo grading");
     }
-    if (error instanceof GradingError || error instanceof ApprovalError) {
+    if (error instanceof GradingError || error instanceof ApprovalError || error instanceof GradingImageError) {
       return failedMutation(new InputError(error.message), form, "Photo grading");
     }
     return failedMutation(error, form, "Photo grading");

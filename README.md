@@ -2,6 +2,14 @@
 
 A mobile-first homeschool grading app. Phases 1-6: local database, seeded demo families, profile switching, gradebook with GPA and credits, photo grading with mock or optional Anthropic AI suggestions, printable transcripts, read-only student work and feedback, and responsive UI polish. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
 
+## Public GitHub Pages demo
+
+Visit https://calebwhitfi-code.github.io/crossroads-hackathon-oct-30/ for a **read-only demonstration with fixed fictional data**. Explore parent/student sample profiles, courses, assignments, feedback, gradebook calculations, rubric/review previews, grading-guide examples, and printable sample transcripts.
+
+GitHub Pages serves only the static `docs/` directory. It does not run the Next.js server, save grades, accept uploads, or call AI. Profile choices last only while viewing the page and are not authentication. Sample rubric rules are illustrative, not confirmed publisher instructions. The full working app still requires the server-side setup below.
+
+`npm run build:pages` compiles the full app's pure grade/transcript helpers for the static demo without reading `.env` or the database. `npm run test:pages` verifies navigation, project-path assets, read-only controls, sample-profile visibility, and responsive layouts. Rebuild and commit the generated `docs/grades.js` and `docs/transcript.js` whenever their source helpers change. Pages publishes from `main` / `docs`.
+
 ## Local setup
 
 Requires Node.js 24 LTS and npm.

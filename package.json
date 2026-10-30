@@ -5,13 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run db:generate && next build",
+    "build:pages": "node scripts/build-pages.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:generate": "node --env-file=.env node_modules/prisma/build/index.js generate",
     "db:migrate": "node --env-file=.env node_modules/prisma/build/index.js migrate dev",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:setup": "node --env-file=.env node_modules/prisma/build/index.js migrate deploy && npm run db:seed",
-    "test": "npm run build && node --env-file=.env --test --test-concurrency=1 tests/*.test.mjs",
+    "test": "npm run build && npm run build:pages && node --env-file=.env --test --test-concurrency=1 tests/*.test.mjs",
+    "test:pages": "npm run build:pages && node --test tests/pages-demo.test.mjs",
     "test:grader": "node --env-file=.env scripts/test-grader.mjs"
   },
   "dependencies": {

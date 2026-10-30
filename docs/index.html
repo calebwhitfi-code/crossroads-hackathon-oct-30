@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Homestead: a read-only homeschool grading demo with fictional sample data.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Homestead | Read-only demo</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./demo.css">
+    <script type="module" src="./demo.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main-content">Skip to content</a>
+    <div class="shell">
+      <aside>
+        <a class="brand" href="#home">homestead<span>.</span></a>
+        <nav aria-label="Main navigation">
+          <a href="#home" data-view="home">Home</a>
+          <a href="#courses" data-view="courses">Courses</a>
+          <a href="#work" data-view="work">Student work</a>
+          <a href="#gradebook" data-view="gradebook">Gradebook</a>
+          <a href="#reviews" data-view="reviews">Reviews</a>
+          <a href="#rubrics" data-view="rubrics">Rubrics</a>
+          <a href="#transcripts" data-view="transcripts">Transcripts</a>
+          <a href="#guide" data-view="guide">Grading guide</a>
+        </nav>
+        <div class="profiles">
+          <label for="profile">Explore a fictional profile</label>
+          <select id="profile">
+            <option value="parent:parker">Parker Family / Parent</option>
+            <option value="student:ava">Ava Parker / Student</option>
+            <option value="student:noah">Noah Parker / Student</option>
+            <option value="parent:rivera">Rivera Family / Parent</option>
+            <option value="student:elena">Elena Rivera / Student</option>
+          </select>
+          <p>Profile selection is for demonstration, not authentication.</p>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="demo-banner">
+          <strong>Read-only GitHub Pages demo</strong>
+          <p>Fictional sample data only. No changes are saved. Uploads and AI grading are disabled; the full app requires a server.</p>
+        </header>
+        <main id="main-content" tabindex="-1">
+          <p>Loading the read-only demonstration...</p>
+          <noscript>Enable JavaScript to explore the fictional sample gradebook. No data will be uploaded or saved.</noscript>
+        </main>
+        <footer>
+          <span>Made for learning. Built around your family.</span>
+          <a href="https://github.com/calebwhitfi-code/crossroads-hackathon-oct-30" target="_blank" rel="noopener noreferrer">View source and full-app setup</a>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

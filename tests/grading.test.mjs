@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { fixtures } from "./fixtures.mjs";
 import { gradeSubmission, mockGrade, validateGradingResult } from "../src/lib/grading-provider.ts";
 import { ApprovalError, checkApproval, scaleToAssignment } from "../src/lib/approval.ts";
+import { GradingImageError, MAX_IMAGE_BYTES, gradingImageType } from "../src/lib/grading-image.ts";
 
 process.env.GRADER = "mock";
 
@@ -57,6 +58,25 @@ test("provider boundary rejects empty images, empty rubrics and unknown provider
   await assert.rejects(gradeSubmission("abc", { name: "x", criteria: [] }));
   process.env.GRADING_PROVIDER = "other";
   try { await assert.rejects(gradeSubmission("abc", rubric), /not available/); } finally { delete process.env.GRADING_PROVIDER; }
+});
+
+test("upload validator accepts supported images and explains type, size, and HEIC failures", () => {
+  assert.equal(gradingImageType(fixtures.worksheet()), "image/png");
+  assert.throws(
+    () => gradingImageType(Buffer.alloc(MAX_IMAGE_BYTES + 1)),
+    (error) => error instanceof GradingImageError && error.message === "The photo must be 5 MB or smaller.",
+  );
+  assert.throws(
+    () => gradingImageType(Buffer.from("%PDF-1.4 not an image")),
+    (error) => error instanceof GradingImageError && /JPEG, PNG, GIF, or WebP/.test(error.message),
+  );
+  const heic = Buffer.alloc(64);
+  heic.write("ftyp", 4, "ascii");
+  heic.write("heic", 8, "ascii");
+  assert.throws(
+    () => gradingImageType(heic),
+    (error) => error instanceof GradingImageError && /HEIC\/HEIF photos are not supported/.test(error.message) && /JPEG or PNG/.test(error.message),
+  );
 });
 
 test("approval rules: only parents, pending, open courses and points within range", () => {

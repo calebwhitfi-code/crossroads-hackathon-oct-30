@@ -1,6 +1,6 @@
 # Homestead QA report
 
-Current verification: production build, all 72 automated tests, and `npm run typecheck` pass. Run with `npm test`; test files run sequentially to avoid competing headless browsers. Coverage includes foundation, grading, transcripts, student work, and the QA suites. Screenshots go to the gitignored `qa-artifacts/`.
+Current verification: production build, all 90 automated tests, and `npm run typecheck` pass. Run with `npm test`; test files run sequentially to avoid competing headless browsers. Coverage includes foundation, grading, transcripts, student work, student management, the interactive Pages demo, and the QA suites. Screenshots go to the gitignored `qa-artifacts/`.
 
 Optional Anthropic AI grading is covered with mocked API responses: request structure, score clamping, exact criterion matching, bad-key/invalid-JSON/refusal/truncation/network/timeout fallback, EXIF orientation, and persistent provider labels. Missing-key fallback also passes through the real upload/review UI without approving a grade or storing a photo. No live, billable AI request has been verified; run `npm run test:grader` after configuring your key locally.
 
@@ -16,7 +16,7 @@ Optional Anthropic AI grading is covered with mocked API responses: request stru
 | 8 | Course with no grades | "No grades yet", no NaN/0% | showed "Not graded" | FIXED |
 | 9 | Failed course: 0 credits, counts in GPA, rule shown in UI | note present | note missing | FIXED |
 | 10 | Cross-student / cross-family grade isolation | hidden | hidden; stale parent tab rejected | PASS |
-| 11 | Delete course/student confirmation, no orphans | confirm + cascade | confirm for courses; no student-delete UI exists; DB cascade leaves no orphans | PASS |
+| 11 | Delete course/student confirmation, no orphans | confirm + cascade | course deletion is confirmed; student deletion uses a dialog with a graded-work warning; DB cascades leave no orphans | PASS |
 | 12 | Blank / tiny / unreadable photo | "retake" message | retake message, nothing saved | PASS |
 | 13 | Blurry / not-a-worksheet photo | clear uncertainty or retake message | mock only detects blank/tiny/unreadable; optional AI is instructed not to guess and to report low confidence; live photo verification pending | MANUAL |
 | 14 | Rotated, crooked, dim photos | graded, no crash | graded | PASS |

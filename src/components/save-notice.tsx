@@ -10,6 +10,8 @@ const messages: Record<string, string> = {
   approved: "Grade approved and saved.",
   discarded: "Suggestion discarded.",
   deleted: "Record and its associated grades deleted.",
+  student: "Student saved.",
+  "student-deleted": "Student and associated records deleted.",
 };
 
 export function SaveNotice({ saved }: { saved: string | string[] | undefined }) {

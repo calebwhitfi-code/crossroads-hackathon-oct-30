@@ -69,6 +69,53 @@ export async function saveCourse(_previous: MutationState, form: FormData): Prom
   finish(`/courses/${courseId}?saved=course`);
 }
 
+export async function saveStudent(_previous: MutationState, form: FormData): Promise<MutationState> {
+  try {
+    const familyId = await parentFamily();
+    const id = text(form, "id", "Student ID", 100, false);
+    const gradeLevel = numberField(form, "gradeLevel", "Grade level", 1, 12, true);
+    const schoolYear = academicYear(form);
+    const graduationYear = Number(schoolYear.slice(5)) + (12 - gradeLevel);
+    const data = {
+      firstName: text(form, "firstName", "First name", 80),
+      lastName: text(form, "lastName", "Last name", 80),
+      gradeLevel,
+      graduationYear,
+    };
+    if (id) {
+      const updated = await db.student.updateMany({ where: { id, familyId }, data });
+      if (updated.count !== 1) throw new InputError("That student is not available in the active family.");
+    } else {
+      await db.student.create({ data: { ...data, familyId } });
+    }
+  } catch (error) {
+    return failedMutation(error, form, "Student save");
+  }
+  finish("/?saved=student");
+}
+
+export async function deleteStudent(_previous: MutationState, form: FormData): Promise<MutationState> {
+  try {
+    const familyId = await parentFamily();
+    const id = text(form, "id", "Student ID", 100);
+    if (!checked(form, "confirm")) throw new InputError("Confirm that you want to delete this student and all associated records.");
+    await db.$transaction(async (tx) => {
+      const student = await tx.student.findFirst({ where: { id, familyId } });
+      if (!student) throw new InputError("That student is not available in the active family.");
+      const approvedGrades = await tx.submission.count({
+        where: { status: "approved", assignment: { course: { studentId: id } } },
+      });
+      if (approvedGrades && text(form, "gradedWork", "Graded-work confirmation", 20) !== "delete") {
+        throw new InputError("Confirm deletion of this student's graded work.");
+      }
+      await tx.student.delete({ where: { id } });
+    });
+  } catch (error) {
+    return failedMutation(error, form, "Student deletion");
+  }
+  finish("/?saved=student-deleted");
+}
+
 export async function deleteCourse(_previous: MutationState, form: FormData): Promise<MutationState> {
   try {
     const familyId = await parentFamily();

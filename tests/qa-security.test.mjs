@@ -34,7 +34,7 @@ test("STEP5 working tree has no secrets and no NEXT_PUBLIC_ variables", () => {
       if (name.startsWith(".env") && name !== ".env.example") continue;
       const path = join(directory, name);
       if (statSync(path).isDirectory()) { scan(path); continue; }
-      if (/\.(db|png|ico|tsbuildinfo)$/.test(name) || name === "package-lock.json" || path.endsWith("tests/qa-security.test.mjs")) continue;
+      if (/\.(db|png|jpe?g|webp|ico|tsbuildinfo)$/i.test(name) || name === "package-lock.json" || path.endsWith("tests/qa-security.test.mjs")) continue;
       const content = readFileSync(path, "utf8");
       for (const pattern of secretPatterns) assert.doesNotMatch(content, pattern, `${path}: ${pattern}`);
       assert.doesNotMatch(content, /NEXT_PUBLIC_[A-Z_]*(KEY|SECRET|TOKEN)/, path);
@@ -43,8 +43,9 @@ test("STEP5 working tree has no secrets and no NEXT_PUBLIC_ variables", () => {
   scan(".");
 });
 
-test("STEP5 uploaded photos are not stored or served: no public/ directory, no API or upload routes, no key in client bundle", () => {
-  assert.equal(existsSync("public"), false);
+test("STEP5 uploaded photos are not stored or served: only the bundled fictional sample is public", () => {
+  assert.equal(existsSync("public/demo/sample-lesson.jpg"), true);
+  assert.deepEqual(readdirSync("public/demo"), ["sample-lesson.jpg"]);
   assert.equal(existsSync("src/app/api"), false);
   const server = readFileSync("src/app/grading-actions.ts", "utf8");
   assert.match(server, /image/i);

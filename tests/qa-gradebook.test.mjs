@@ -136,7 +136,7 @@ test("STEP2 add, revise and delete a grade updates course %, letter and GPA imme
   assert.equal(await app.db.criterionScore.count({ where: { submissionId: submission.id } }), 0);
 });
 
-test("STEP2 deleting a student cascades with no orphaned courses, grades, submissions or scores (no student-delete UI exists)", async () => {
+test("STEP2 deleting a student cascades with no orphaned courses, grades, submissions or scores", async () => {
   const student = await app.db.student.create({ data: { familyId: "family-qa", firstName: "Temp", lastName: "Kid", gradeLevel: 9, graduationYear: 2031 } });
   const course = await app.db.course.create({ data: { studentId: student.id, name: "Temp", subject: "QA", credits: 1, gradeLevel: 9, academicYear: "2026-2027" } });
   const assignment = await app.db.assignment.create({ data: { courseId: course.id, title: "T", maxPoints: 10 } });

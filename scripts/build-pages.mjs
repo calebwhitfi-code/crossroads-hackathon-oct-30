@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import ts from "typescript";
 
 // Use the full app's pure grade calculations; no environment files, database, or API clients.
@@ -14,4 +14,6 @@ for (const name of ["grades", "transcript"]) {
   });
   writeFileSync(`docs/${name}.js`, result.outputText);
 }
-console.log("Read-only Pages demo built with fictional sample data.");
+mkdirSync("docs/demo", { recursive: true });
+copyFileSync("public/demo/sample-lesson.jpg", "docs/demo/sample-lesson.jpg");
+console.log("Interactive Pages demo built with fictional browser-only sample data.");

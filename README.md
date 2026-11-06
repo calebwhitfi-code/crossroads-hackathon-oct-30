@@ -1,25 +1,31 @@
 # Homestead
 
-A mobile-first homeschool grading app. Phases 1-6: local database, seeded demo families, profile switching, gradebook with GPA and credits, photo grading with mock or optional Anthropic AI suggestions, printable transcripts, read-only student work and feedback, and responsive UI polish. No real authentication; all demo families are accessible to anyone running the app. Use fictional data only.
+Homestead is a mobile-first homeschool gradebook that turns photographed work into parent-reviewed grades, GPA, credits, and printable transcripts.
+
+**Live demo:** https://calebwhitfi-code.github.io/crossroads-hackathon-oct-30/
+
+![Homestead family overview](docs/screenshots/home.png)
+
+![Interactive photo-grade review](docs/screenshots/photo-review.png)
+
+The full local app includes family-scoped student management, courses and assignments, manual and photo grading, reusable rubrics, optional Anthropic suggestions, curriculum-guide extraction, gradebook calculations, student feedback, and transcripts. The public demo uses fictional data and runs an interactive deterministic mock workflow entirely in the browser.
 
 ## Public GitHub Pages demo
 
-Visit https://calebwhitfi-code.github.io/crossroads-hackathon-oct-30/ for a **read-only demonstration with fixed fictional data**. Explore parent/student sample profiles, courses, assignments, feedback, gradebook calculations, rubric/review previews, grading-guide examples, and printable sample transcripts.
+The GitHub Pages demo includes a bundled fictional assignment photo and rubric. Choose **Grade sample photo** to create criterion-level mock feedback, adjust or discard the suggestion, and approve it. Approval updates the assignment, GPA, credits, and transcript; pending suggestions never count. Demo changes and student-management edits persist in `localStorage` until **Reset demo** restores the seed records.
 
-GitHub Pages serves only the static `docs/` directory. It does not run the Next.js server, save grades, accept uploads, or call AI. Profile choices last only while viewing the page and are not authentication. Sample rubric rules are illustrative, not confirmed publisher instructions. The full working app still requires the server-side setup below.
+GitHub Pages serves only `docs/`. It does not accept uploads, run the Next.js server, or call AI. Its writes stay in that browser only and are not authentication. Sample rubric rules are illustrative, not confirmed publisher instructions. Use fictional data only.
 
-`npm run build:pages` compiles the full app's pure grade/transcript helpers for the static demo without reading `.env` or the database. `npm run test:pages` verifies navigation, project-path assets, read-only controls, sample-profile visibility, and responsive layouts. Rebuild and commit the generated `docs/grades.js` and `docs/transcript.js` whenever their source helpers change. Pages publishes from `main` / `docs`.
+`npm run build:pages` compiles the full app's pure grade/transcript helpers and copies the bundled sample asset without reading `.env` or the database. `npm run test:pages` verifies navigation, grading, approval, persistence, reset, student management, profile visibility, and responsive layouts. Pages publishes from `main` / `docs`.
 
-## Local setup
+## Run locally
 
 Requires Node.js 24 LTS and npm.
 
 ```sh
-cp .env.example .env
 npm ci
-npm run db:generate
-npm run db:setup
-npm run dev
+cp .env.example .env && npm run db:generate
+npm run db:setup && npm run dev
 ```
 
 Open http://localhost:3000. Select **Switch profile** to open the compact profile menu, then select a numbered parent or student profile. The menu closes when you select a profile, click outside, or press Escape. The selection persists in an HTTP-only cookie and returns you to Home. Student profiles show only that student's workspace, but the switcher is not an authorization mechanism. Both **Home** and the Homestead logo return to the home screen; **Courses** opens the course preview.
@@ -30,7 +36,7 @@ If Node was installed locally during setup, add it to your current terminal firs
 export PATH="$HOME/.local/node-lts/bin:$PATH"
 ```
 
-## Commands
+## Development commands
 
 ```sh
 npm test
@@ -87,6 +93,8 @@ The Prisma schema includes families, students, courses, assignments, reusable ru
 
 Assignments have Test, Quiz, or Homework categories, weighted 50%, 20%, and 30% respectively. Each category averages its graded assignment percentages equally; empty categories are excluded and remaining weights are renormalized. Existing assignments migrate to Homework. Only the latest approved grade counts; pending and ungraded work never counts as zero.
 
+Parents can add and edit students using a name, grade level, and school year. The expected graduation year is derived from those values. New students appear in the profile switcher, all writes remain scoped to the active family, and deleting a student with graded work requires an explicit confirmation dialog.
+
 ## Photograph a curriculum grading guide
 
 From an open course, choose **Import grading guide**. Upload one or two photos of its rubric and grading-scale pages (JPEG, PNG, GIF, or WebP, up to 5 MB each). With AI enabled, Homestead extracts an editable draft. Nothing is saved or applied until a parent checks the rules, selects which parts to use, and confirms **Approve & apply rules**. Photos are discarded after extraction.
@@ -95,7 +103,14 @@ The rubric becomes a reusable template and the course's default photo-grading ru
 
 No Notgrass or other publisher's scale is built in or assumed. Missing or unreadable rules are flagged rather than invented. Mock cannot extract publisher rules: when AI is unavailable or extraction fails, enter the rules manually on the same page. This importer supports up to five rubric criteria and A/B/C/D/F percentage cutoffs, not plus/minus grading, raw-point deduction formulas, or category-weight changes. Check those details against the actual curriculum before saving.
 
-Phases 1-6 are complete for the local demo. Real authentication remains separate future work; the calendar remains stretch-only. Future writes must validate points, rubric ownership, and approval state before saving; the schema alone does not enforce those application rules.
+Phases 1-6 and the final interactive-demo/student-management push are complete for the local demo. Application writes validate family ownership and relevant grade/approval rules before saving; the schema alone does not enforce all of those rules.
+
+## Not implemented
+
+- **Authentication and real authorization:** profile switching is a demo convenience. Anyone running the app can access the seeded demo families, so do not use real student data or expose it publicly.
+- **Calendar:** this remains a stretch feature.
+- **Production persistence:** the full app uses local SQLite. A production deployment needs an approved persistent database and an authentication design.
+- **Student uploads:** students can read assignments, approved scores, and feedback, but cannot submit work directly.
 
 ## Phase 3: photo grading
 
@@ -117,7 +132,7 @@ Seeded grades are unchanged. `tests/grading.test.mjs` covers the validator, mock
 
 **Student work** (`/work`) lists assignments grouped by student and course, including instructions, due dates, the latest parent-approved score, and its feedback. Assignments without an approved score remain visible without exposing pending suggestions or feedback. Empty courses and missing feedback have explicit messages.
 
-Student profiles see only their own work; parent profiles can view their active family's work. The page is read-only for both roles, with links to existing course pages. Students also have a shortcut from Home. This page does not add student uploads, student editing, or real authentication.
+Student profiles see only their own work; parent profiles can view their active family's work. The page is read-only for both roles, with links to existing course pages. Students also have a shortcut from Home. This page does not add student uploads or real authentication.
 
 ## Phase 6: polish
 

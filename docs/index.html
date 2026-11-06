@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Homestead: a read-only homeschool grading demo with fictional sample data.">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
-    <title>Homestead | Read-only demo</title>
+    <meta name="description" content="Homestead: an interactive, browser-only homeschool grading demo with fictional sample data.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+    <title>Homestead | Interactive browser demo</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="./demo.css">
     <script type="module" src="./demo.js"></script>
@@ -21,30 +21,26 @@
           <a href="#work" data-view="work">Student work</a>
           <a href="#gradebook" data-view="gradebook">Gradebook</a>
           <a href="#reviews" data-view="reviews">Reviews</a>
+          <a href="#students" data-view="students">Students</a>
           <a href="#rubrics" data-view="rubrics">Rubrics</a>
           <a href="#transcripts" data-view="transcripts">Transcripts</a>
           <a href="#guide" data-view="guide">Grading guide</a>
         </nav>
         <div class="profiles">
           <label for="profile">Explore a fictional profile</label>
-          <select id="profile">
-            <option value="parent:parker">Parker Family / Parent</option>
-            <option value="student:ava">Ava Parker / Student</option>
-            <option value="student:noah">Noah Parker / Student</option>
-            <option value="parent:rivera">Rivera Family / Parent</option>
-            <option value="student:elena">Elena Rivera / Student</option>
-          </select>
+          <select id="profile"></select>
           <p>Profile selection is for demonstration, not authentication.</p>
+          <button id="reset-demo" class="secondary" type="button">Reset demo</button>
         </div>
       </aside>
       <div class="workspace">
         <header class="demo-banner">
-          <strong>Read-only GitHub Pages demo</strong>
-          <p>Fictional sample data only. No changes are saved. Uploads and AI grading are disabled; the full app requires a server.</p>
+          <strong>Interactive GitHub Pages demo</strong>
+          <p>Fictional sample data only. Try the bundled sample photo and parent tools; changes stay in this browser. No upload, server, AI, or network request is used.</p>
         </header>
         <main id="main-content" tabindex="-1">
-          <p>Loading the read-only demonstration...</p>
-          <noscript>Enable JavaScript to explore the fictional sample gradebook. No data will be uploaded or saved.</noscript>
+          <p>Loading the interactive demonstration...</p>
+          <noscript>Enable JavaScript to explore the fictional sample gradebook. No data is uploaded or sent anywhere.</noscript>
         </main>
         <footer>
           <span>Made for learning. Built around your family.</span>
@@ -52,5 +48,13 @@
         </footer>
       </div>
     </div>
+    <dialog id="delete-student-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
+      <h2 id="delete-dialog-title">Delete student?</h2>
+      <p id="delete-dialog-description"></p>
+      <div class="button-row">
+        <button id="cancel-delete" class="secondary" type="button">Cancel</button>
+        <button id="confirm-delete" class="danger" type="button">Delete student</button>
+      </div>
+    </dialog>
   </body>
 </html>

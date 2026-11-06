@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { SaveNotice } from "@/components/save-notice";
 import { visibleStudents } from "@/lib/gradebook";
 import { courseGrade, formatGpa, studentSummary } from "@/lib/grades";
 
-export default async function OverviewPage() {
+export default async function OverviewPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { profile, students } = await visibleStudents();
   const courseCount = students.reduce((total, student) => total + student.courses.length, 0);
 
   return (
     <div className="space-y-9">
+      <SaveNotice saved={(await searchParams).saved} />
       <section className="max-w-2xl">
         <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-accent uppercase">Room to learn</p>
         <h1 className="text-3xl leading-tight font-semibold tracking-tight sm:text-4xl lg:text-5xl">
@@ -18,6 +20,7 @@ export default async function OverviewPage() {
             ? "Your courses, assignments, parent-approved grades, and feedback, all in one place."
             : "One thoughtful space for your homeschool. Manage your family's courses, approve grades, and follow each learner's progress."}
         </p>
+        {profile.role === "parent" && <Link href="/students/new" className="button-primary mt-5">Add student</Link>}
       </section>
 
       {profile.student && (
@@ -68,10 +71,12 @@ export default async function OverviewPage() {
               </div>
               <p className="mt-3 text-xs leading-6 text-muted">{[...new Set(student.courses.map((course) => course.subject))].join(" / ")}</p>
               <p className="mt-3 text-xs leading-6 text-muted">Unweighted GPA <span className="text-accent">{formatGpa(summary.unweightedGpa)}</span> / Weighted GPA <span className="text-accent">{formatGpa(summary.weightedGpa)}</span></p>
+              {profile.role === "parent" && <Link href={`/students/${student.id}/edit`} className="text-link mt-3">Edit student</Link>}
             </article>
             );
           })}
         </div>
+        {!students.length && <p className="rounded-xl border border-border bg-card p-6 text-sm leading-7 text-muted">No students yet. Add a student to start this family workspace.</p>}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-6 sm:p-7" aria-labelledby="foundation-heading">

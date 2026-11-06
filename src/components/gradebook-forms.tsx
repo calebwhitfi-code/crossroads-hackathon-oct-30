@@ -75,7 +75,7 @@ export function CourseForm({ initial, students }: {
         <Field label="Subject">
           <input name="subject" defaultValue={value(state, "subject", initial.subject)} maxLength={80} className="form-input" placeholder="Mathematics" required />
         </Field>
-        <Field label="Curriculum (optional)" hint="Shown beneath the course name. Rubric selection arrives in Phase 3.">
+        <Field label="Curriculum (optional)" hint="Shown beneath the course name.">
           <input name="curriculum" defaultValue={value(state, "curriculum", initial.curriculum ?? "")} maxLength={160} className="form-input" placeholder="Saxon Math - Algebra 2" />
         </Field>
         <Field label="School year" hint="Use consecutive years, such as 2026-2027.">
